@@ -44,7 +44,7 @@ export default function AdminLayout({
   return (
     <div className="flex min-h-screen bg-zinc-100 pb-16 md:pb-0">
       {/* Slim Admin Sidebar */}
-      <aside className="hidden md:flex w-20 bg-black text-white flex flex-col items-center py-6 shrink-0 border-r-4 border-brand-primary/20">
+      <aside className="hidden md:flex w-20 bg-black text-white flex-col items-center py-6 shrink-0 border-r-4 border-brand-primary/20">
         {/* Compact Logo Mark */}
         <div className="mb-10">
           <div className="w-12 h-12 bg-brand-primary flex items-center justify-center italic font-black text-2xl shadow-[4px_4px_0px_0px_rgba(255,255,255,0.2)]">

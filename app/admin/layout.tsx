@@ -42,9 +42,9 @@ export default function AdminLayout({
   };
 
   return (
-    <div className="flex min-h-screen bg-zinc-100">
+    <div className="flex min-h-screen bg-zinc-100 pb-16 md:pb-0">
       {/* Slim Admin Sidebar */}
-      <aside className="w-20 bg-black text-white flex flex-col items-center py-6 shrink-0 border-r-4 border-brand-primary/20">
+      <aside className="hidden md:flex w-20 bg-black text-white flex flex-col items-center py-6 shrink-0 border-r-4 border-brand-primary/20">
         {/* Compact Logo Mark */}
         <div className="mb-10">
           <div className="w-12 h-12 bg-brand-primary flex items-center justify-center italic font-black text-2xl shadow-[4px_4px_0px_0px_rgba(255,255,255,0.2)]">
@@ -92,6 +92,34 @@ export default function AdminLayout({
           </button>
         </div>
       </aside>
+
+      {/* Mobile Bottom Bar */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-black border-t-2 border-brand-primary/20 flex justify-around items-center z-[100] px-4">
+        {NAV_ITEMS.map((item) => {
+          const isActive = pathname.startsWith(item.href);
+          return (
+            <Link 
+              key={item.href}
+              href={item.href}
+              className={`p-3 transition-all ${
+                isActive 
+                  ? 'bg-white text-black shadow-[4px_4px_0px_0px_rgba(227,66,52,1)]' 
+                  : 'text-white/40'
+              }`}
+            >
+              {item.icon}
+            </Link>
+          );
+        })}
+        
+        {/* Mobile Sign Out */}
+        <button 
+          onClick={handleSignOut}
+          className="p-3 text-red-500"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </button>
+      </nav>
 
       {/* Main Content */}
       <main className="flex-1 overflow-hidden flex flex-col">

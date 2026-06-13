@@ -174,6 +174,17 @@ export default function VehicleInventory() {
 
   const toggleFeature = (f: string) => setFormData((prev: any) => ({ ...prev, features: prev.features.includes(f) ? prev.features.filter((x: string) => x !== f) : [...prev.features, f] }));
 
+  async function handleDeleteAsset(id: string) {
+    if (confirm("Delete Unit?")) {
+      const { error } = await supabase.from("vehicles").delete().eq("id", id);
+      if (error) {
+        alert("ERROR: Unable to delete unit. " + error.message);
+      } else {
+        fetchInventory();
+      }
+    }
+  }
+
   return (
     <div className="flex flex-col h-screen bg-zinc-50 overflow-hidden text-black font-sans">
       <header className="p-4 md:p-8 bg-white border-b-4 border-black flex justify-between items-center z-20 shrink-0 shadow-sm text-black">
@@ -195,7 +206,39 @@ export default function VehicleInventory() {
       </header>
 
       <main className="flex-1 p-8 overflow-y-auto">
-        <div className="max-w-7xl mx-auto"><div className="bg-white border-4 border-black overflow-hidden shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] text-black">
+        <div className="max-w-7xl mx-auto">
+          {/* Mobile Card List */}
+          <div className="md:hidden space-y-6">
+            {inventory.map((v) => (
+              <div key={v.id} className="bg-white border-4 border-black p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+                <p className="text-[10px] font-black uppercase text-brand-primary mb-1">VIN: {v.vin}</p>
+                <h2 className="text-2xl font-black uppercase italic leading-none mb-1">{v.year} {v.make}</h2>
+                <p className="text-xs font-bold opacity-60 uppercase mb-4">{v.model}</p>
+                
+                <div className="grid grid-cols-3 gap-2 mb-6">
+                  <div>
+                    <p className="text-[8px] font-black uppercase opacity-40">Price</p>
+                    <p className="font-mono font-black text-brand-primary">${Number(v.price || 0).toLocaleString()}</p>
+                  </div>
+                  <div>
+                    <p className="text-[8px] font-black uppercase opacity-40">Miles</p>
+                    <p className="font-mono text-[10px] font-bold">{v.mileage?.toLocaleString() || "---"}</p>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <span className={`text-[8px] font-black border-2 border-black px-2 py-0.5 uppercase ${v.status === 'available' ? 'bg-green-400' : 'bg-white'}`}>{v.status}</span>
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <button onClick={() => openEditTerminal(v)} className="flex-1 bg-black text-white py-3 font-black uppercase text-[10px] border-b-4 border-r-4 border-black/30">Edit Unit</button>
+                  <button onClick={() => handleDeleteAsset(v.id)} className="flex-1 bg-white text-red-600 py-3 font-black uppercase text-[10px] border-4 border-black">Delete</button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop Table */}
+          <div className="hidden md:block bg-white border-4 border-black overflow-hidden shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] text-black">
             <table className="w-full text-left border-collapse">
               <thead><tr className="bg-black text-white text-[10px] font-black uppercase tracking-widest"><th className="p-5 text-white">Asset</th><th className="p-5 text-center text-white">Status / Age</th><th className="p-5 text-center text-white text-white">Financials</th><th className="p-5 text-center text-white text-white">Audit</th><th className="p-5 text-right text-white">Terminal</th></tr></thead>
               <tbody className="divide-y-4 divide-zinc-50 text-black">
@@ -211,7 +254,7 @@ export default function VehicleInventory() {
                       <td className="p-5 text-right text-black text-black text-black text-black text-black">
                           <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity text-black">
                               <button onClick={() => openEditTerminal(v)} className="bg-black text-white p-3 hover:bg-brand-primary border-b-2 border-r-2 border-black/20 text-white shadow-sm text-white"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 fill-white" viewBox="0 0 20 20"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" /></svg></button>
-                              <button onClick={async () => { if(confirm("Delete Unit?")) { await supabase.from("vehicles").delete().eq("id", v.id); fetchInventory(); } }} className="bg-white text-red-600 p-3 border-2 border-black hover:bg-red-50 text-red-600 shadow-sm text-red-600"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" /></svg></button>
+                              <button onClick={() => handleDeleteAsset(v.id)} className="bg-white text-red-600 p-3 border-2 border-black hover:bg-red-50 text-red-600 shadow-sm text-red-600"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" /></svg></button>
                           </div>
                       </td>
                     </tr>

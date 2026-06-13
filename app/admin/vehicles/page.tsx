@@ -266,7 +266,7 @@ export default function VehicleInventory() {
       {terminal.isOpen && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-[4px] z-[100] flex items-center justify-center p-4 text-black">
           <div className="bg-white border-4 border-black w-full max-w-5xl max-h-[95vh] overflow-hidden flex flex-col shadow-[32px_32px_0px_0px_rgba(227,66,52,1)]">
-            <header className="shrink-0 bg-white border-b-4 border-black p-8 flex justify-between items-center z-50 text-black">
+            <header className="shrink-0 bg-white border-b-4 border-black p-4 md:p-8 flex justify-between items-center z-50 text-black">
               <div>
                 <div className="flex items-center gap-4 mb-1">
                     <p className="text-[10px] font-black uppercase text-brand-primary tracking-[0.2em]">{terminal.mode} Active</p>
@@ -274,16 +274,16 @@ export default function VehicleInventory() {
                     {syncStatus === 'saved' && <span className="bg-black text-white px-2 py-0.5 text-[8px] font-black border border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] tracking-widest text-white text-white">SECURE</span>}
                     {!isOnline && <span className="bg-brand-primary text-white px-2 py-0.5 text-[8px] font-black animate-pulse border border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] text-white">OFFLINE DRAFT</span>}
                 </div>
-                <h2 className="text-4xl font-black uppercase italic tracking-tighter leading-none">{terminal.activeStep === 1 ? 'Intake Terminal' : terminal.activeStep === 3 ? 'Sync Confirmed' : `${formData.year} ${formData.make} ${formData.model}`}</h2>
+                <h2 className="text-2xl md:text-4xl font-black uppercase italic tracking-tighter leading-none">{terminal.activeStep === 1 ? 'Intake Terminal' : terminal.activeStep === 3 ? 'Sync Confirmed' : `${formData.year} ${formData.make} ${formData.model}`}</h2>
               </div>
               <button onClick={() => setTerminal({ ...terminal, isOpen: false })} className="text-4xl font-black hover:text-brand-primary transition-colors border-4 border-black h-10 w-10 flex items-center justify-center bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">X</button>
             </header>
-            <div className="flex-1 overflow-y-auto p-12 text-black">
+            <div className="flex-1 overflow-y-auto p-4 md:p-12 text-black">
                 {terminal.activeStep === 1 ? (
                   <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 text-center py-10">
                     <div className="flex justify-center gap-4"><button onClick={() => setTerminal({...terminal, entryType: 'vin'})} className={`px-10 py-4 text-xs font-black uppercase border-4 border-black transition-all ${terminal.entryType === 'vin' ? 'bg-black text-white shadow-xl' : 'opacity-30'}`}>VIN Signature</button><button onClick={() => setTerminal({...terminal, entryType: 'plate'})} className={`px-10 py-4 text-xs font-black uppercase border-4 border-black transition-all ${terminal.entryType === 'plate' ? 'bg-black text-white shadow-xl' : 'opacity-30'}`}>Plate Search</button></div>
-                    <div className="bg-zinc-50 p-16 border-4 border-black border-dashed">
-                      <input autoFocus placeholder="IDENTIFIER" className="w-full bg-transparent border-b-4 border-black p-4 font-mono font-black text-center text-5xl uppercase outline-none focus:text-brand-primary text-black" value={terminal.entryType === 'vin' ? formData.vin : formData.plate} onChange={(e) => setFormData({ ...formData, [terminal.entryType]: e.target.value.toUpperCase() })} maxLength={terminal.entryType === 'vin' ? 17 : 10} />
+                    <div className="bg-zinc-50 p-8 md:p-16 border-4 border-black border-dashed">
+                      <input autoFocus placeholder="IDENTIFIER" className="w-full bg-transparent border-b-4 border-black p-4 font-mono font-black text-center text-3xl md:text-5xl uppercase outline-none focus:text-brand-primary text-black" value={terminal.entryType === 'vin' ? formData.vin : formData.plate} onChange={(e) => setFormData({ ...formData, [terminal.entryType]: e.target.value.toUpperCase() })} maxLength={terminal.entryType === 'vin' ? 17 : 10} />
                       {(errors.vin || errors.plate) && <p className="text-brand-primary font-black uppercase text-xs mt-8 bg-brand-primary/10 p-4 border-2 border-brand-primary animate-pulse text-brand-primary">{errors.vin || errors.plate}</p>}
                       <button onClick={handleEntrySubmit} className="mt-16 bg-black text-white px-24 py-8 font-black uppercase shadow-xl hover:bg-brand-primary transition-all text-white">INITIATE DECODE</button>
                     </div>

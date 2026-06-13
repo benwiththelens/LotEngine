@@ -176,18 +176,21 @@ export default function VehicleInventory() {
 
   return (
     <div className="flex flex-col h-screen bg-zinc-50 overflow-hidden text-black font-sans">
-      <header className="p-8 bg-white border-b-4 border-black flex justify-between items-center z-20 shrink-0 shadow-sm text-black">
-        <div className="flex items-center gap-10">
-          <div><p className="text-[10px] font-black uppercase text-brand-primary mb-1">Lot Management</p><h1 className="text-4xl font-black uppercase italic tracking-tighter leading-none">Unified Inventory</h1></div>
+      <header className="p-4 md:p-8 bg-white border-b-4 border-black flex justify-between items-center z-20 shrink-0 shadow-sm text-black">
+        <div className="flex items-center gap-4 md:gap-10">
+          <div>
+            <p className="text-[10px] font-black uppercase text-brand-primary mb-1">Lot Management</p>
+            <h1 className="text-xl md:text-4xl font-black uppercase italic tracking-tighter leading-none">Unified Inventory</h1>
+          </div>
           <div className="hidden md:flex gap-8 border-l-2 border-black/5 pl-10 text-black">
             <div><p className="text-[10px] font-black opacity-30 uppercase mb-1 text-black">Units</p><p className="text-xl font-mono font-black italic">{inventory.length}</p></div>
             <div><p className="text-[10px] font-black opacity-30 uppercase mb-1 text-black">Sales</p><p className="text-xl font-mono font-black italic text-brand-primary">{inventory.filter(v => v.status === 'available').length}</p></div>
-            <div><p className="text-[10px] font-black opacity-30 uppercase mb-1 text-black">Valuation</p><p className="text-xl font-mono font-black italic text-black">$\${inventory.reduce((a, v) => a + (Number(v.price) || 0), 0).toLocaleString()}</p></div>
+            <div><p className="text-[10px] font-black opacity-30 uppercase mb-1 text-black">Valuation</p><p className="text-xl font-mono font-black italic text-black">${inventory.reduce((a, v) => a + (Number(v.price) || 0), 0).toLocaleString()}</p></div>
           </div>
         </div>
         <div className="flex gap-4">
           {!isOnline && <div className="flex items-center gap-2 border-4 border-yellow-400 p-2 bg-yellow-50 shadow-[4px_4px_0px_0px_rgba(250,204,21,1)] text-black"><span className="animate-ping h-2 w-2 rounded-full bg-yellow-400" /><p className="text-[9px] font-black uppercase">Offline</p></div>}
-          <button onClick={openAddTerminal} className="bg-black text-white px-10 py-4 font-black uppercase text-xs border-b-4 border-r-4 border-black/30 shadow-xl hover:bg-brand-primary transition-all text-white text-white">Add New Unit</button>
+          <button onClick={openAddTerminal} className="bg-black text-white px-6 py-3 md:px-10 md:py-4 font-black uppercase text-[10px] md:text-xs border-b-4 border-r-4 border-black/30 shadow-xl hover:bg-brand-primary transition-all">Add <span className="hidden md:inline">New </span>Unit</button>
         </div>
       </header>
 

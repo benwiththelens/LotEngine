@@ -1,36 +1,71 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ⚙️ LotEngine
 
-## Getting Started
+LotEngine is a lightweight, headless operating system built for independent automotive dealerships. It abstracts away the bloat and "luxury tax" of legacy dealership software, providing a unified and extensible platform for inventory management, marketing automation, and dealership operations.
 
-First, run the development server:
+It is designed to act as a 1:1 digital twin of the physical asphalt.
+
+## 🏗️ System Architecture
+
+The platform utilizes a decoupled, headless architecture to maximize mobile performance on the lot and ensure absolute data portability.
+
+```mermaid
+graph TD;
+    subgraph Input Layer [The Lot]
+        M[Mechanic Mobile UI] -->|Guided Camera & Data| S[(Supabase Postgres)]
+        V[VIN Input] -->|Webhook| E[Edge Function]
+        E <-->|Fetch Specs| N(NHTSA API)
+        E -->|Write Specs| S
+    end
+
+    subgraph Distribution Layer [The Web]
+        S -->|Static Build via API| W[Next.js Front-End]
+        S -->|Ad-Kit Payload| P[Social Syndication / Postiz]
+        S -->|Service Webhooks| B[Brevo Email/SMS]
+    end
+```
+
+## 🛠️ The Tech Stack
+
+- **Frontend**: Next.js (App Router), React, Tailwind CSS
+- **Database & Auth**: Supabase (PostgreSQL)
+- **Hosting (Phase 1)**: Vercel (Edge) + Supabase Cloud
+- **Hosting (Phase 2)**: Self-hosted Docker / Traefik on bare metal
+
+## 🚀 Core Mechanisms
+
+## 💻 Local Development Setup
+
+To run LotEngine locally, you need Node.js and a Supabase project.
+
+### Clone the repository:
+
+```bash
+git clone https://github.com/benwiththelens/LotEngine.git
+cd lotengine
+```
+
+### Install dependencies:
+
+```bash
+npm install
+```
+
+### Configure Environment Variables:
+
+Create a `.env.local` file in the root directory:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL="your-supabase-url"
+NEXT_PUBLIC_SUPABASE_ANON_KEY="your-anon-key"
+NEXT_PUBLIC_VIN_API_URL="https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVin/"
+```
+
+### Start the development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The application will be available at http://localhost:3000.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Built for speed, clarity, and zero friction.

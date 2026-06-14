@@ -7,6 +7,9 @@ All notable changes to the LotEngine project will be documented in this file.
 ### Added
 - **Multi-Tenant Architecture:** Restructured application into `(tenant)` and `(marketing)` route groups with dynamic domain-based routing.
 - **LotEngine Marketing Site:** Built a high-fidelity, dark-industrial landing page for the SaaS platform featuring `framer-motion` animations and a technical "3 Pillars" grid.
+- **Hybrid Login Gate:** Implemented a failsafe authentication UI supporting both high-speed Access Keys (Passwords) and asphalt-ready Secure Links (Magic Link OTP).
+- **Terminal Demo Request:** Replaced standard contact forms with a high-fidelity input terminal integrated with the Resend email protocol.
+- **System Specifications Page:** Created a technical deep-dive route (`/specs`) mirroring system architecture and tech stack details.
 - **Dynamic Proxy Infrastructure:** Implemented `proxy.ts` (Next.js 16) to handle intelligent domain rewrites, supporting both shared subpaths and custom dealer domains.
 - **Official Brand Assets:** Fully integrated the new official LotEngine logo (Blue/White/Transparent) across the navigation, sidebars, and footers.
 - **Finalized Favicon Pack (v3):** Integrated optimized, space-efficient brand icons for all platforms.

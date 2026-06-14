@@ -26,11 +26,13 @@ graph TD;
 - **Frontend**: Next.js 16 (App Router), React 19, Tailwind CSS 4
 - **Animations**: Framer Motion (Industrial-grade UI)
 - **Database & Auth**: Supabase (PostgreSQL)
+- **Email Protocol**: Resend (Server-side notifications)
 - **Infrastructure**: Vercel (Edge) with dynamic Proxy routing
 
 ## 🚀 Core Mechanisms
 
 - **Dynamic Multi-Tenancy**: Zero-configuration domain mapping with robust lookup fallbacks for Vercel preview environments.
+- **Hybrid Login Gate**: Failsafe authentication pipeline supporting both high-speed Access Keys (Passwords) and asphalt-ready Secure Links (Magic Link OTP).
 - **Rugged Professionalism Aesthetic**: A high-contrast, flat design system optimized for maximum sunlight readability and industrial performance. (No shadows, sharp 90° corners, pure white/black).
 - **Service Kanban Engine**: An industrial-grade 5-stage workflow for managing repairs on the lot (Intake → Diagnostics → Awaiting Parts → In Progress → Ready).
 - **Inventory Terminal**: A deep-dive management hub for asset capture, VIN decoding, and multi-tenant repository management.
@@ -68,6 +70,7 @@ Create a `.env.local` file in the root directory:
 NEXT_PUBLIC_SUPABASE_URL="your-supabase-url"
 NEXT_PUBLIC_SUPABASE_ANON_KEY="your-anon-key"
 NEXT_PUBLIC_VIN_API_URL="https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVin/"
+RESEND_API_KEY="re_your_key"
 ```
 
 ### Start the development server:

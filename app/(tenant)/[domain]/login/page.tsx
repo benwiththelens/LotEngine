@@ -9,6 +9,7 @@ export default function LoginPage({ params }: { params: Promise<{ domain: string
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState<{ type: 'info' | 'error', text: string } | null>(null);
   const router = useRouter();
   const pathname = usePathname();
 
@@ -24,6 +25,7 @@ export default function LoginPage({ params }: { params: Promise<{ domain: string
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
+    setMessage(null);
 
     const { error } = await supabase.auth.signInWithPassword({
       email,
@@ -31,76 +33,107 @@ export default function LoginPage({ params }: { params: Promise<{ domain: string
     });
 
     if (error) {
-      alert(error.message);
+      setMessage({ type: 'error', text: error.message.toUpperCase() });
     } else {
       router.push(getLink("/admin/vehicles"));
-      router.refresh();
     }
     setLoading(false);
   }
 
-  async function handleSignUp(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleMagicLink() {
+    if (!email) {
+      setMessage({ type: 'error', text: "STAFF EMAIL REQUIRED FOR SECURE LINK" });
+      return;
+    }
+    
     setLoading(true);
+    setMessage(null);
 
-    const { error } = await supabase.auth.signUp({
+    const { error } = await supabase.auth.signInWithOtp({
       email,
-      password,
+      options: {
+        emailRedirectTo: typeof window !== 'undefined' ? `${window.location.origin}${getLink("/admin/vehicles")}` : undefined,
+      }
     });
 
     if (error) {
-      alert(error.message);
+      setMessage({ type: 'error', text: error.message.toUpperCase() });
     } else {
-      alert("Check your email for a confirmation link!");
+      setMessage({ type: 'info', text: "SECURE LINK DEPLOYED TO INBOX" });
     }
     setLoading(false);
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-zinc-100 p-4">
-      <div className="w-full max-w-md bg-white border-2 border-black p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
-        <h1 className="text-4xl font-black uppercase italic tracking-tighter mb-2 text-black">LotEngine</h1>
-        <p className="text-[10px] font-black uppercase tracking-widest opacity-50 mb-8 text-black">Secure Terminal Access</p>
+    <div className="flex min-h-screen flex-col items-center justify-center bg-zinc-950 p-4 font-sans selection:bg-[#0055FF]/30">
+      <div className="w-full max-w-md bg-black border border-zinc-800 p-10 flex flex-col items-center">
+        {/* The Brand */}
+        <div className="mb-10">
+          <img src="/logo.png" alt="LotEngine Logo" className="w-12 h-12 object-contain" />
+        </div>
+
+        <div className="w-full mb-10 text-center text-white">
+          <h1 className="text-2xl font-black uppercase italic tracking-tighter">System Authorization</h1>
+          <p className="text-[10px] font-mono font-bold uppercase tracking-[0.4em] text-zinc-500 mt-2">LotEngine Terminal // v0.3.0</p>
+        </div>
         
-        <form onSubmit={handleLogin} className="space-y-6 text-black">
-          <div>
-            <label className="block text-[10px] font-black uppercase tracking-widest mb-2 text-black">Staff Email</label>
+        <form onSubmit={handleLogin} className="w-full space-y-8">
+          {message && (
+            <div className={`p-4 border font-mono text-[10px] font-black uppercase tracking-widest animate-pulse ${
+              message.type === 'error' ? 'bg-red-500/10 border-red-500 text-red-500' : 'bg-[#0055FF]/10 border-[#0055FF] text-[#0055FF]'
+            }`}>
+              {message.type === 'error' ? '!! ' : '// '}{message.text}
+            </div>
+          )}
+
+          <div className="text-white">
+            <label className="block text-[10px] font-mono font-black uppercase tracking-[0.2em] mb-3 text-zinc-400">Staff Email</label>
             <input 
               type="email" 
-              className="w-full border-2 border-black p-4 font-bold focus:outline-none focus:ring-2 focus:ring-brand-primary text-black bg-white"
+              placeholder="OPERATOR_ID"
+              className="w-full bg-zinc-900 border border-zinc-800 p-4 font-mono font-bold text-white outline-none focus:border-[#0055FF] transition-colors placeholder:opacity-20"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
             />
           </div>
-          <div>
-            <label className="block text-[10px] font-black uppercase tracking-widest mb-2 text-black">Access Key</label>
+          <div className="text-white">
+            <label className="block text-[10px] font-mono font-black uppercase tracking-[0.2em] mb-3 text-zinc-400">Access Key</label>
             <input 
               type="password" 
-              className="w-full border-2 border-black p-4 font-bold focus:outline-none focus:ring-2 focus:ring-brand-primary text-black bg-white"
+              placeholder="••••••••"
+              className="w-full bg-zinc-900 border border-zinc-800 p-4 font-mono font-bold text-white outline-none focus:border-[#0055FF] transition-colors placeholder:opacity-20"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              required
             />
           </div>
           
-          <div className="flex flex-col gap-4 pt-4 text-black">
+          <div className="flex flex-col gap-6 pt-4 items-center">
             <button 
               type="submit"
               disabled={loading}
-              className="w-full bg-black text-white py-4 font-black uppercase tracking-widest hover:bg-brand-primary transition-colors disabled:opacity-50 text-white"
+              className="w-full bg-[#0055FF] text-white py-5 font-black uppercase tracking-[0.2em] text-xs hover:brightness-110 transition-all disabled:opacity-50 active:translate-y-0.5"
             >
               {loading ? "AUTHENTICATING..." : "AUTHORIZE ACCESS"}
             </button>
+            
             <button 
-              onClick={handleSignUp}
+              type="button"
+              onClick={handleMagicLink}
               disabled={loading}
-              className="w-full border-2 border-black py-4 font-black uppercase tracking-widest hover:bg-zinc-100 transition-colors text-xs text-black"
+              className="font-mono text-zinc-500 text-[10px] font-bold uppercase tracking-[0.3em] hover:text-white transition-colors"
             >
-              Request New Account
+              // Request Secure Link
             </button>
           </div>
         </form>
+      </div>
+
+      {/* Infrastructure Note */}
+      <div className="mt-8 flex items-center gap-4 text-zinc-700 font-mono text-[8px] font-black uppercase tracking-[0.5em]">
+        <span>Encrypted Pipeline</span>
+        <div className="w-1 h-1 bg-zinc-800 rounded-full" />
+        <span>Hardware Isolation</span>
       </div>
     </div>
   );

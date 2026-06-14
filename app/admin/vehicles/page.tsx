@@ -77,7 +77,11 @@ export default function VehicleInventory() {
 
   const fetchInventory = useCallback(async () => {
     setLoading(true);
-    const { data: tenant } = await supabase.from("tenants").select("id").eq("domain", typeof window !== 'undefined' ? window.location.host : '').single();
+    let { data: tenant } = await supabase.from("tenants").select("id").eq("domain", typeof window !== 'undefined' ? window.location.host : '').single();
+    if (!tenant) {
+      const { data: fallback } = await supabase.from("tenants").select("id").limit(1).single();
+      tenant = fallback;
+    }
     if (tenant) {
       const { data } = await supabase.from("vehicles").select("*").eq("tenant_id", tenant.id).order("created_at", { ascending: false });
       if (data) setInventory(data as Vehicle[]);
@@ -86,7 +90,11 @@ export default function VehicleInventory() {
   }, []);
 
   const refreshInventoryQuietly = useCallback(async () => {
-    const { data: tenant } = await supabase.from("tenants").select("id").eq("domain", typeof window !== 'undefined' ? window.location.host : '').single();
+    let { data: tenant } = await supabase.from("tenants").select("id").eq("domain", typeof window !== 'undefined' ? window.location.host : '').single();
+    if (!tenant) {
+      const { data: fallback } = await supabase.from("tenants").select("id").limit(1).single();
+      tenant = fallback;
+    }
     const { data } = await supabase.from("vehicles").select("*").eq("tenant_id", tenant?.id).order("created_at", { ascending: false });
     if (data) setInventory(data as Vehicle[]);
   }, []);

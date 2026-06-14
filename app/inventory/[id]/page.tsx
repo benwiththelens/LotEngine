@@ -9,11 +9,16 @@ export default async function VehicleDetail({ params }: { params: { id: string }
   const host = headerList.get("host") || "lot-engines.com";
 
   // 1. Fetch Tenant
-  const { data: tenant } = await supabase
+  let { data: tenant } = await supabase
     .from("tenants")
     .select("*")
     .eq("domain", host)
     .single();
+
+  if (!tenant) {
+    const { data: fallback } = await supabase.from("tenants").select("*").limit(1).single();
+    tenant = fallback;
+  }
 
   if (!tenant) return notFound();
 

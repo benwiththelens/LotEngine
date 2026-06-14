@@ -208,7 +208,11 @@ export default function ServiceBay() {
   }, []);
 
   async function fetchOrders() {
-    const { data: tenant } = await supabase.from("tenants").select("id").eq("domain", window.location.host).single();
+    let { data: tenant } = await supabase.from("tenants").select("id").eq("domain", typeof window !== 'undefined' ? window.location.host : '').single();
+    if (!tenant) {
+      const { data: fallback } = await supabase.from("tenants").select("id").limit(1).single();
+      tenant = fallback;
+    }
     if (tenant) {
       const { data } = await supabase.from("service_orders").select("*, vehicles(year, make, model, vin)").eq("tenant_id", tenant.id).order("created_at", { ascending: true });
       if (data) setOrders(data);
@@ -249,7 +253,11 @@ export default function ServiceBay() {
 
   async function handleIntake(e: React.FormEvent) {
     e.preventDefault();
-    const { data: tenant } = await supabase.from("tenants").select("id").eq("domain", window.location.host).single();
+    let { data: tenant } = await supabase.from("tenants").select("id").eq("domain", typeof window !== 'undefined' ? window.location.host : '').single();
+    if (!tenant) {
+      const { data: fallback } = await supabase.from("tenants").select("id").limit(1).single();
+      tenant = fallback;
+    }
     if (!tenant) return;
     const { data: vehicle } = await supabase.from("vehicles").select("id").eq("vin", vehicleVin.toUpperCase()).single();
     const { error } = await supabase.from("service_orders").insert({

@@ -13,15 +13,15 @@ const DRIVETRAINS = ["FWD", "RWD", "AWD", "4x4", "4x2"];
 const FUEL_TYPES = ["Gasoline", "Diesel", "Electric", "Hybrid", "Plug-in Hybrid"];
 
 export default function VehicleInventory() {
-  const [inventory, setInventory] = useState([]);
+  const [inventory, setInventory] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [terminal, setTerminal] = useState({ isOpen: false, mode: 'add', activeStep: 1, entryType: 'vin', id: null });
+  const [terminal, setTerminal] = useState<any>({ isOpen: false, mode: 'add', activeStep: 1, entryType: 'vin', id: null });
   const [isDecoding, setIsDecoding] = useState(false);
-  const [errors, setErrors] = useState({});
-  const [syncStatus, setSyncStatus] = useState('idle');
+  const [errors, setErrors] = useState<any>({});
+  const [syncStatus, setSyncStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [isOnline, setIsOnline] = useState(true);
   
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<any>({
     vin: "", plate: "", state: "NE", year: "", make: "", model: "", trim: "", engine: "", drivetrain: "FWD",
     fuel_type: "Gasoline", ev_range: "", ev_battery: "", condition: "Good", features: [],
     price: "", mileage: "", status: "available", lot_location: "RECEIVING",
@@ -41,9 +41,9 @@ export default function VehicleInventory() {
     };
   }, []);
 
-  const sanitizePayload = (data) => {
+  const sanitizePayload = (data: any) => {
     const p = { ...data };
-    const toNum = (val) => (val === "" || val === null || isNaN(Number(val))) ? null : Number(val);
+    const toNum = (val: any) => (val === "" || val === null || isNaN(Number(val))) ? null : Number(val);
     p.year = toNum(p.year); p.price = toNum(p.price); p.mileage = toNum(p.mileage);
     p.ev_range = toNum(p.ev_range); p.ev_battery = toNum(p.ev_battery);
     delete p.plate; delete p.state; delete p.initiate_recon; delete p.id;
@@ -51,7 +51,7 @@ export default function VehicleInventory() {
     return p;
   };
 
-  const queueOfflineAction = (action, payload, id) => {
+  const queueOfflineAction = (action: string, payload: any, id: string | null) => {
     const queue = JSON.parse(localStorage.getItem('lotengine_sync_queue') || '[]');
     queue.push({ action, payload, id, ts: Date.now() });
     localStorage.setItem('lotengine_sync_queue', JSON.stringify(queue));
@@ -67,8 +67,7 @@ export default function VehicleInventory() {
       else if (item.action === 'insert') await supabase.from("vehicles").insert(item.id ? { ...item.payload, id: item.id } : item.payload);
     }
     localStorage.removeItem('lotengine_sync_queue');
-    setSyncStatus('saved');
-    fetchInventory();
+    setSyncStatus('saved'); fetchInventory();
   };
 
   useEffect(() => {
@@ -101,16 +100,16 @@ export default function VehicleInventory() {
   }
 
   const validateStage1 = () => {
-    const e = {};
+    const e: any = {};
     if (terminal.entryType === 'vin' && formData.vin.length !== 17) e.vin = "INVALID: 17 characters required.";
     if (terminal.entryType === 'plate' && !formData.plate) e.plate = "MISSING: Enter plate.";
     setErrors(e); return Object.keys(e).length === 0;
   };
 
   const validateStage2 = () => {
-    const e = {};
-    if (!formData.price || Number(formData.price) <= 0) e.price = "PRICING ERROR: Valid price required.";
-    if (!formData.mileage || Number(formData.mileage) < 0) e.mileage = "ODOMETER ERROR: Valid mileage required.";
+    const e: any = {};
+    if (!formData.price || Number(formData.price) <= 0) e.price = "PRICE ERROR: Valid price required.";
+    if (!formData.mileage || Number(formData.mileage) < 0) e.mileage = "MILES ERROR: Valid mileage required.";
     if (!formData.exterior_color) e.exterior_color = "DATA ERROR: Exterior color required.";
     setErrors(e); return Object.keys(e).length === 0;
   };
@@ -121,7 +120,7 @@ export default function VehicleInventory() {
     setErrors({}); setSyncStatus('idle');
   };
   
-  const openEditTerminal = (v) => { 
+  const openEditTerminal = (v: any) => { 
     setFormData({ ...v, plate: "", state: "NE", initiate_recon: false }); 
     setTerminal({ isOpen: true, mode: 'edit', activeStep: 2, entryType: 'vin', id: v.id }); 
     setErrors({}); setSyncStatus('saved');
@@ -134,9 +133,9 @@ export default function VehicleInventory() {
       let targetVin = formData.vin;
       if (terminal.entryType === 'plate' && !isOnline) throw new Error("Plate lookup offline.");
       if (terminal.entryType === 'plate') targetVin = (await lookupPlate(formData.plate, formData.state)).vin;
-      let d = { year: "", make: "MANUAL", model: "ENTRY", trim: "", engine: "", drivetrain: "FWD", fuelType: "Gasoline" };
+      let d: any = { year: "", make: "MANUAL", model: "ENTRY" };
       if (isOnline) d = await decodeVin(targetVin);
-      const updated = { ...formData, vin: targetVin, year: d.year.toString(), make: d.make, model: d.model, trim: d.trim || "", engine: d.engine, drivetrain: d.drivetrain || "FWD", fuel_type: d.fuelType || "Gasoline" };
+      const updated = { ...formData, vin: targetVin, year: d.year.toString(), make: d.make, model: d.model };
       setFormData(updated);
       if (terminal.mode === 'add') {
         const { data: tenant } = await supabase.from("tenants").select("id").eq("domain", window.location.host).single();
@@ -145,15 +144,15 @@ export default function VehicleInventory() {
         if (!isOnline) {
           const tid = crypto.randomUUID();
           queueOfflineAction('insert', payload, tid);
-          setTerminal(prev => ({ ...prev, activeStep: 2, id: tid }));
+          setTerminal((prev: any) => ({ ...prev, activeStep: 2, id: tid }));
         } else {
           const { data: asset, error } = await supabase.from("vehicles").insert(payload).select('id').single();
           if (error) throw error;
-          setTerminal(prev => ({ ...prev, activeStep: 2, id: asset.id }));
+          setTerminal((prev: any) => ({ ...prev, activeStep: 2, id: asset.id }));
         }
-      } else setTerminal(prev => ({ ...prev, activeStep: 2 }));
+      } else setTerminal((prev: any) => ({ ...prev, activeStep: 2 }));
       setSyncStatus('saved');
-    } catch (e) { alert(e.message); } finally { setIsDecoding(false); }
+    } catch (e: any) { alert(e.message); } finally { setIsDecoding(false); }
   }
 
   async function commitAsset(addAnother = false) {
@@ -162,7 +161,7 @@ export default function VehicleInventory() {
     const p = sanitizePayload({ ...formData, status: formData.status === 'draft' ? 'available' : formData.status });
     if (!isOnline) {
       queueOfflineAction('update', p, terminal.id);
-      if (addAnother) openAddTerminal(); else setTerminal(prev => ({ ...prev, activeStep: 3 }));
+      if (addAnother) openAddTerminal(); else setTerminal((prev: any) => ({ ...prev, activeStep: 3 }));
       return;
     }
     const { error } = await supabase.from("vehicles").update(p).eq("id", terminal.id);
@@ -171,141 +170,162 @@ export default function VehicleInventory() {
         const { data: tenant } = await supabase.from("tenants").select("id").eq("domain", window.location.host).single();
         await supabase.from("service_orders").insert({ tenant_id: tenant?.id, vehicle_id: terminal.id, customer_name: "INTERNAL RECON", status: "intake", is_internal_recon: true });
       }
-      fetchInventory(); if (addAnother) openAddTerminal(); else setTerminal(prev => ({ ...prev, activeStep: 3 }));
+      fetchInventory(); if (addAnother) openAddTerminal(); else setTerminal((prev: any) => ({ ...prev, activeStep: 3 }));
     } else alert(error.message);
   }
 
-  const toggleFeature = (f) => {
-    setFormData((prev) => ({
-        ...prev,
-        features: prev.features.includes(f) ? prev.features.filter((x) => x !== f) : [...prev.features, f]
-    }));
-  };
+  const toggleFeature = (f: string) => setFormData((prev: any) => ({ ...prev, features: prev.features.includes(f) ? prev.features.filter((x: string) => x !== f) : [...prev.features, f] }));
 
   return (
     <div className="flex flex-col h-screen bg-zinc-50 overflow-hidden text-black font-sans">
-      <header className="p-8 bg-white border-b-4 border-black flex justify-between items-center z-20 shrink-0 shadow-sm">
+      <header className="p-4 md:p-8 bg-white border-b-4 border-black flex justify-between items-center z-20 shrink-0 shadow-sm">
         <div className="flex items-center gap-10">
-          <div><p className="text-[10px] font-black uppercase text-brand-primary mb-1">Lot Management</p><h1 className="text-4xl font-black uppercase italic tracking-tighter leading-none text-nowrap">Unified Inventory</h1></div>
-          <div className="hidden md:flex gap-8 border-l-2 border-black/5 pl-10 text-black text-black">
-            <div><p className="text-[10px] font-black opacity-30 uppercase mb-1 text-black">Units</p><p className="text-xl font-mono font-black italic leading-none">{inventory.length}</p></div>
-            <div><p className="text-[10px] font-black opacity-30 uppercase mb-1 text-black">Sales</p><p className="text-xl font-mono font-black italic text-brand-primary">{inventory.filter(v => v.status === 'available').length}</p></div>
-            <div><p className="text-[10px] font-black opacity-30 uppercase mb-1 text-black">Valuation</p><p className="text-xl font-mono font-black italic">$\${inventory.reduce((a, v) => a + (Number(v.price) || 0), 0).toLocaleString()}</p></div>
+          <div><p className="text-[10px] font-black uppercase text-brand-primary mb-1 tracking-widest">Lot Management</p><h1 className="text-2xl md:text-4xl font-black uppercase italic tracking-tighter leading-none">Unified Inventory</h1></div>
+          <div className="hidden md:flex gap-8 border-l-2 border-black/5 pl-10">
+            <div><p className="text-[10px] font-black opacity-30 uppercase mb-1">Units</p><p className="text-xl font-mono font-black italic leading-none">{inventory.length}</p></div>
+            <div><p className="text-[10px] font-black opacity-30 uppercase mb-1">Sales</p><p className="text-xl font-mono font-black italic text-brand-primary leading-none">{inventory.filter(v => v.status === 'available').length}</p></div>
+            <div><p className="text-[10px] font-black opacity-30 uppercase mb-1 text-black">Valuation</p><p className="text-xl font-mono font-black italic leading-none">$\${inventory.reduce((a, v) => a + (Number(v.price) || 0), 0).toLocaleString()}</p></div>
           </div>
         </div>
         <div className="flex gap-4">
-          {!isOnline && <div className="flex items-center gap-2 border-4 border-yellow-400 p-2 bg-yellow-50 shadow-[4px_4px_0px_0px_rgba(250,204,21,1)]"><span className="animate-ping h-2 w-2 rounded-full bg-yellow-400" /><p className="text-[9px] font-black uppercase">Offline</p></div>}
-          <button onClick={openAddTerminal} className="bg-black text-white px-10 py-4 font-black uppercase text-xs border-b-4 border-r-4 border-black/30 shadow-xl hover:bg-brand-primary transition-all">Add New Unit</button>
+          {!isOnline && <div className="flex items-center gap-2 border-4 border-yellow-400 p-2 bg-yellow-50 shadow-[4px_4px_0px_0px_rgba(250,204,21,1)] text-black"><span className="animate-ping h-2 w-2 rounded-full bg-yellow-400" /><p className="text-[9px] font-black uppercase">Offline</p></div>}
+          <button onClick={openAddTerminal} className="bg-black text-white px-6 md:px-10 py-3 md:py-4 font-black uppercase text-[10px] md:text-xs border-b-4 border-r-4 border-black/30 shadow-xl hover:bg-brand-primary transition-all">Add New Unit</button>
         </div>
       </header>
 
-      <main className="flex-1 p-8 overflow-y-auto">
+      <main className="flex-1 p-4 md:p-8 overflow-y-auto">
         <div className="max-w-7xl mx-auto">
-          <div className="bg-white border-4 border-black overflow-hidden shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] text-black">
+          <div className="hidden md:block bg-white border-4 border-black overflow-hidden shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] text-black">
             <table className="w-full text-left border-collapse">
-              <thead><tr className="bg-black text-white text-[10px] font-black uppercase tracking-[0.2em]"><th className="p-5 text-white">Asset</th><th className="p-5 text-center text-white">Status / Age</th><th className="p-5 text-center text-white">Financials</th><th className="p-5 text-center text-white">Technical Audit</th><th className="p-5 text-right text-white">Terminal</th></tr></thead>
+              <thead><tr className="bg-black text-white text-[10px] font-black uppercase tracking-widest"><th className="p-5 text-white">Asset</th><th className="p-5 text-center text-white">Status / Age</th><th className="p-5 text-center text-white">Financials</th><th className="p-5 text-center text-white">Audit</th><th className="p-5 text-right text-white">Terminal</th></tr></thead>
               <tbody className="divide-y-4 divide-zinc-50 text-black">
                 {loading ? <tr><td colSpan={5} className="p-20 text-center animate-pulse opacity-20 uppercase font-black">Syncing...</td></tr> : inventory.map((v) => {
                   const age = Math.floor((Date.now() - new Date(v.created_at).getTime()) / 86400000);
-                  const audit = [!v.price && "PRICE", !v.exterior_color && "COLOR", !v.public_description && "DESC", v.status === 'draft' && "DRAFT"].filter(Boolean);
+                  const audit = [!v.price && "PRICE", !v.exterior_color && "COLOR", !v.public_description && "DESC", v.status==='draft' && "DRAFT"].filter(Boolean);
                   return (
                     <tr key={v.id} className="hover:bg-zinc-50 group transition-colors text-black">
-                      <td className="p-5">
-                          <p className="text-[10px] font-black uppercase text-brand-primary mb-1 tracking-tighter">VIN: {v.vin}</p>
-                          <h2 className="text-2xl font-black uppercase italic leading-none">{v.year} {v.make}</h2>
-                          <p className="text-xs font-bold opacity-60 uppercase">{v.model}</p>
-                      </td>
-                      <td className="p-5 text-center text-black">
-                          <div className="flex flex-col items-center gap-1">
-                            <span className={\`text-[9px] font-black border-2 border-black px-2 py-0.5 uppercase \${v.status === 'available' ? 'bg-green-400' : 'bg-white'}\`}>{v.status}</span>
-                            <span className={\`text-[8px] font-black uppercase \${age > 60 ? 'bg-red-600 text-white animate-pulse' : age > 30 ? 'bg-yellow-400' : 'opacity-30'}\`}>{age === 0 ? "NEW" : \`\${age} DAYS\`}</span>
-                          </div>
-                      </td>
-                      <td className="p-5 text-center text-black">
-                          <p className="font-mono font-black text-xl text-brand-primary leading-none">$\${Number(v.price || 0).toLocaleString()}</p>
-                          <p className="font-mono text-[10px] opacity-40 uppercase tracking-tighter mt-1">{v.mileage?.toLocaleString() || "---"} MI</p>
-                      </td>
-                      <td className="p-5 text-center text-black">
-                        <div className="flex flex-wrap justify-center gap-1">
-                            {audit.length === 0 ? <span className="text-[8px] font-black text-green-600 border px-1 uppercase bg-green-50">Verified</span> : audit.map(f => <span key={f} className="text-[8px] font-black bg-brand-primary text-white px-1 uppercase border border-black">{f}</span>)}
-                        </div>
-                      </td>
+                      <td className="p-5 text-black"><p className="text-[10px] font-black uppercase text-brand-primary mb-1 tracking-tighter">VIN: {v.vin}</p><h2 className="text-2xl font-black uppercase italic leading-none">{v.year} {v.make}</h2><p className="text-xs font-bold opacity-60 uppercase">{v.model}</p></td>
+                      <td className="p-5 text-center text-black"><div className="flex flex-col items-center gap-1"><span className={\`text-[9px] font-black border-2 border-black px-2 py-0.5 uppercase \${v.status === 'available' ? 'bg-green-400' : 'bg-white'}\`}>{v.status}</span><span className={\`text-[8px] font-black uppercase px-2 \${age > 60 ? 'bg-red-600 text-white animate-pulse' : age > 30 ? 'bg-yellow-400' : 'opacity-30'}\`}>{age === 0 ? "NEW" : \`\${age} DAYS\`}</span></div></td>
+                      <td className="p-5 text-center text-black"><p className="font-mono font-black text-xl text-brand-primary leading-none">$\${Number(v.price || 0).toLocaleString()}</p><p className="font-mono text-[10px] opacity-40 uppercase mt-1">{v.mileage?.toLocaleString() || "---"} MI</p></td>
+                      <td className="p-5 text-center text-black"><div className="flex flex-wrap justify-center gap-1">{audit.length === 0 ? <span className="text-[8px] font-black text-green-600 border px-1 uppercase">Verified</span> : audit.map(f => <span key={f as string} className="text-[8px] font-black bg-brand-primary text-white px-1 uppercase border border-black">{f}</span>)}</div></td>
                       <td className="p-5 text-right text-black">
-                          <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity text-black">
-                              <button onClick={() => openEditTerminal(v)} className="bg-black text-white p-3 hover:bg-brand-primary border-b-2 border-r-2 border-black/20 text-white shadow-sm"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 fill-white" viewBox="0 0 20 20"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" /></svg></button>
+                          <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button onClick={() => openEditTerminal(v)} className="bg-black text-white p-3 hover:bg-brand-primary border-b-2 border-r-2 border-black/20"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 fill-white" viewBox="0 0 20 20"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" /></svg></button>
                               <button onClick={async () => { if(confirm("Delete Unit?")) { await supabase.from("vehicles").delete().eq("id", v.id); fetchInventory(); } }} className="bg-white text-red-600 p-3 border-2 border-black hover:bg-red-50 text-red-600 shadow-sm"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" /></svg></button>
                           </div>
                       </td>
                     </tr>
                   );
-                })}
-              </tbody>
+                })}</tbody>
             </table>
+          </div>
+
+          <div className="md:hidden flex flex-col gap-4">
+             {loading ? <p className="text-center p-20 opacity-20 font-black uppercase text-black">Syncing...</p> : inventory.map(v => {
+                const age = Math.floor((Date.now() - new Date(v.created_at).getTime()) / 86400000);
+                return (
+                  <div key={v.id} className="bg-white border-4 border-black p-4 flex flex-col gap-4 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] text-black">
+                    <div className="flex justify-between items-start">
+                       <div>
+                          <p className="text-[9px] font-black uppercase text-brand-primary tracking-tighter mb-1">VIN: {v.vin}</p>
+                          <h2 className="text-xl font-black uppercase italic leading-none">{v.year} {v.make} {v.model}</h2>
+                       </div>
+                       <span className={\`text-[8px] font-black border-2 border-black px-2 py-0.5 uppercase \${v.status === 'available' ? 'bg-green-400' : 'bg-white'}\`}>{v.status}</span>
+                    </div>
+                    <div className="flex justify-between items-end border-t-2 border-black/5 pt-4 text-black">
+                       <div>
+                          <p className="font-mono font-black text-xl text-brand-primary leading-none text-brand-primary">$\${Number(v.price || 0).toLocaleString()}</p>
+                          <p className="font-mono text-[9px] opacity-40 uppercase mt-1">\{v.mileage?.toLocaleString() || "---"\} MI | \{age === 0 ? "NEW" : \`\${age} DAYS\`\}</p>
+                       </div>
+                       <button onClick={() => openEditTerminal(v)} className="bg-black text-white p-3 hover:bg-brand-primary border-b-2 border-r-2 border-black/20"><svg className="h-5 w-5 fill-white" viewBox="0 0 20 20"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" /></svg></button>
+                    </div>
+                  </div>
+                );
+             })}
           </div>
         </div>
       </main>
 
       {terminal.isOpen && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-[4px] z-[100] flex items-center justify-center p-4">
-          <div className="bg-white border-4 border-black w-full max-w-5xl max-h-[95vh] overflow-hidden flex flex-col shadow-[32px_32px_0px_0px_rgba(227,66,52,1)] text-black">
-            <header className="shrink-0 bg-white border-b-4 border-black p-8 flex justify-between items-center z-50 text-black">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-[4px] z-[100] flex items-center justify-center sm:p-4 text-black">
+          <div className="bg-white border-4 border-black w-full max-w-5xl h-full sm:max-h-[95vh] overflow-hidden flex flex-col shadow-[32px_32px_0px_0px_rgba(227,66,52,1)]">
+            <header className="shrink-0 bg-white border-b-4 border-black p-4 sm:p-8 flex justify-between items-center z-50">
               <div>
-                <div className="flex items-center gap-4 mb-1 text-black">
+                <div className="flex items-center gap-4 mb-1">
                     <p className="text-[10px] font-black uppercase text-brand-primary tracking-[0.2em]">{terminal.mode} Active</p>
                     {syncStatus === 'saving' && <span className="bg-yellow-400 text-black px-2 py-0.5 text-[8px] font-black animate-pulse border border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">SYNCING...</span>}
-                    {syncStatus === 'saved' && <span className="bg-black text-white px-2 py-0.5 text-[8px] font-black border border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] tracking-widest text-white">SECURE</span>}
+                    {syncStatus === 'saved' && <span className="bg-black text-white px-2 py-0.5 text-[8px] font-black border border-black tracking-widest text-white">SECURE</span>}
                     {!isOnline && <span className="bg-brand-primary text-white px-2 py-0.5 text-[8px] font-black animate-pulse border border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">OFFLINE DRAFT</span>}
                 </div>
-                <h2 className="text-4xl font-black uppercase italic tracking-tighter leading-none text-black">
-                    {terminal.activeStep === 1 ? 'Intake Terminal' : terminal.activeStep === 3 ? 'Sync Confirmed' : \`\${formData.year} \${formData.make} \${formData.model}\`}
-                </h2>
+                <h2 className="text-2xl sm:text-4xl font-black uppercase italic tracking-tighter leading-none">{terminal.activeStep === 1 ? 'Intake Terminal' : terminal.activeStep === 3 ? 'Sync Confirmed' : \`\${formData.year} \${formData.make} \${formData.model}\`}</h2>
               </div>
-              <div className="flex items-center gap-6 text-black">
-                {terminal.activeStep === 2 && (
-                    <div className="hidden sm:flex items-center gap-2 mr-6 text-black text-black text-black text-black text-black">
-                        {[1, 2, 3].map((s) => (
-                            <div key={s} className={\`h-1.5 w-6 border border-black \${s <= terminal.activeStep ? 'bg-black' : 'bg-zinc-100'}\`} />
-                        ))}
-                    </div>
-                )}
-                <button onClick={() => setTerminal({ ...terminal, isOpen: false })} className="text-4xl font-black hover:text-brand-primary transition-colors border-4 border-black h-10 w-10 flex items-center justify-center bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] text-black">X</button>
-              </div>
+              <button onClick={() => setTerminal({ ...terminal, isOpen: false })} className="text-2xl sm:text-4xl font-black hover:text-brand-primary transition-colors border-4 border-black h-10 w-10 flex items-center justify-center bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] text-black">X</button>
             </header>
-
-            <div className="flex-1 overflow-y-auto p-12 text-black">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-12 text-black">
                 {terminal.activeStep === 1 ? (
-                  <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 text-center py-10 text-black text-black text-black text-black text-black">
-                    <div className="flex justify-center gap-4 text-black text-black text-black text-black text-black text-black"><button onClick={() => setTerminal({...terminal, entryType: 'vin'})} className={\`px-10 py-4 text-xs font-black uppercase border-4 border-black transition-all \${terminal.entryType === 'vin' ? 'bg-black text-white shadow-xl text-white' : 'text-black opacity-30'}\`}>VIN</button><button onClick={() => setTerminal({...terminal, entryType: 'plate'})} className={\`px-10 py-4 text-xs font-black uppercase border-4 border-black transition-all \${terminal.entryType === 'plate' ? 'bg-black text-white shadow-xl text-white' : 'text-black opacity-30'}\`}>Plate</button></div>
-                    <div className="bg-zinc-50 p-16 border-4 border-black border-dashed text-black text-black text-black text-black">
-                      <input autoFocus placeholder="IDENTIFIER" className="w-full bg-transparent border-b-4 border-black p-4 font-mono font-black text-center text-5xl uppercase outline-none focus:text-brand-primary text-black" value={terminal.entryType === 'vin' ? formData.vin : formData.plate} onChange={(e) => setFormData({ ...formData, [terminal.entryType]: e.target.value.toUpperCase() })} maxLength={terminal.entryType === 'vin' ? 17 : 10} />
+                  <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 text-center py-10">
+                    <div className="flex justify-center gap-4 text-black text-black"><button onClick={() => setTerminal({...terminal, entryType: 'vin'})} className={\`px-6 sm:px-10 py-3 sm:py-4 text-xs font-black uppercase border-4 border-black transition-all \${terminal.entryType === 'vin' ? 'bg-black text-white shadow-xl' : 'opacity-30'}\`}>VIN Signature</button><button onClick={() => setTerminal({...terminal, entryType: 'plate'})} className={\`px-6 sm:px-10 py-3 sm:py-4 text-xs font-black uppercase border-4 border-black transition-all \${terminal.entryType === 'plate' ? 'bg-black text-white shadow-xl' : 'opacity-30'}\`}>Plate Search</button></div>
+                    <div className="bg-zinc-50 p-6 sm:p-16 border-4 border-black border-dashed">
+                      <input autoFocus placeholder="IDENTIFIER" className="w-full bg-transparent border-b-4 border-black p-4 font-mono font-black text-center text-3xl sm:text-5xl uppercase outline-none focus:text-brand-primary transition-colors text-black" value={terminal.entryType === 'vin' ? formData.vin : formData.plate} onChange={(e) => setFormData({ ...formData, [terminal.entryType]: e.target.value.toUpperCase() })} maxLength={terminal.entryType === 'vin' ? 17 : 10} />
                       {(errors.vin || errors.plate) && <p className="text-brand-primary font-black uppercase text-xs mt-8 bg-brand-primary/10 p-4 border-2 border-brand-primary animate-pulse">{errors.vin || errors.plate}</p>}
-                      <button onClick={handleEntrySubmit} className="mt-16 bg-black text-white px-24 py-8 font-black uppercase shadow-xl hover:bg-brand-primary transition-all text-white text-white text-white">INITIATE DECODE</button>
+                      <button onClick={handleEntrySubmit} className="mt-12 sm:mt-16 bg-black text-white px-12 sm:px-24 py-6 sm:py-8 font-black uppercase shadow-xl hover:bg-brand-primary transition-all text-white">INITIATE DECODE</button>
                     </div>
                   </div>
                 ) : terminal.activeStep === 2 ? (
-                  <div className="max-w-2xl mx-auto space-y-16 pb-20 text-black text-black text-black text-black text-black">
-                    {Object.keys(errors).length > 0 && <div className="bg-brand-primary p-6 border-4 border-black text-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] italic text-xs font-bold uppercase space-y-1">{Object.values(errors).map((err, i) => <p key={i}>!! {err}</p>)}</div>}
-                    <div><p className="text-xs font-black uppercase text-brand-primary mb-6 border-b-4 border-black pb-2 text-black">01. Identity Persistence</p><div className="grid grid-cols-2 gap-6"><div><label className="block text-[9px] font-black uppercase opacity-40 mb-1">Exterior Color*</label><input className={\`w-full border-4 border-black p-4 font-black uppercase text-sm outline-none \${errors.exterior_color?'border-brand-primary':''}\`} value={formData.exterior_color} onChange={e=>setFormData({...formData, exterior_color:e.target.value})} /></div><div><label className="block text-[9px] font-black uppercase opacity-40 mb-1">Interior Color</label><input className="w-full border-4 border-black p-4 font-black uppercase text-sm outline-none" value={formData.interior_color} onChange={e=>setFormData({...formData, interior_color:e.target.value})} /></div></div></div>
-                    <div><p className="text-xs font-black uppercase text-brand-primary mb-6 border-b-4 border-black pb-2 text-black">02. Pricing & Market Strategy</p><div className="grid grid-cols-1 sm:grid-cols-2 gap-8 text-black"><div className="space-y-6"><div><label className="block text-[9px] font-black uppercase mb-1 opacity-40 italic">Retail Price ($)*</label><input type="number" className={\`w-full border-4 border-black p-5 font-mono font-black text-3xl outline-none \${errors.price?'border-brand-primary':''}\`} value={formData.price} onChange={e=>setFormData({...formData, price:e.target.value})} /></div><div><label className="block text-[9px] font-black uppercase mb-1 opacity-40 italic">Odometer (MI)*</label><input type="number" className={\`w-full border-4 border-black p-5 font-mono font-black text-3xl outline-none \${errors.mileage?'border-brand-primary':''}\`} value={formData.mileage} onChange={e=>setFormData({...formData, mileage:e.target.value})} /></div></div><div className="space-y-6"><div><label className="block text-[9px] font-black uppercase mb-1 opacity-40 italic">System Status*</label><select className="w-full border-4 border-black p-5 font-black uppercase text-xl appearance-none bg-white text-black text-black" value={formData.status} onChange={e=>setFormData({...formData, status:e.target.value})}><option value="draft">Draft</option><option value="available">Available</option><option value="sold">Sold</option></select></div><div><label className="block text-[9px] font-black uppercase mb-1 opacity-40 italic">Location</label><input placeholder="e.g., FRONT ROW" className="w-full border-4 border-black p-5 font-black uppercase text-xl outline-none text-black" value={formData.lot_location} onChange={e=>setFormData({...formData, lot_location:e.target.value})} /></div></div></div></div>
-                    <div><p className="text-xs font-black uppercase text-brand-primary mb-6 border-b-4 border-black pb-2 text-black text-black text-black">03. Condition & Recon</p><div className="space-y-8 text-black"><select className="w-full border-4 border-black p-5 font-black uppercase outline-none text-2xl appearance-none bg-white text-black" value={formData.condition} onChange={e=>setFormData({...formData, condition:e.target.value})}><option value="Excellent">Excellent - Front Line</option><option value="Good">Good - Standard</option><option value="Fair">Fair - Value Unit</option><option value="Needs Work">Needs Work</option></select>{terminal.mode === 'add' && <label className="flex items-center gap-6 cursor-pointer bg-zinc-100 p-8 border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] text-black"><input type="checkbox" className="w-12 h-12 border-4 border-black checked:bg-brand-primary appearance-none cursor-pointer text-black text-black" checked={formData.initiate_recon} onChange={(e) => setFormData({ ...formData, initiate_recon: e.target.checked })} /><div><p className="text-xl font-black uppercase leading-none">Auto-Initiate Recon</p><p className="text-[10px] font-bold opacity-40 mt-2 uppercase">Generate Shop Floor Ticket on Finalize</p></div></label>}</div></div>
-                    <div><p className="text-xs font-black uppercase text-brand-primary mb-6 border-b-4 border-black pb-2 text-black text-black text-black">04. Features Matrix</p><div className="grid grid-cols-2 sm:grid-cols-5 gap-3 text-black text-black text-black">{COMMON_FEATURES.map(f => (<button key={f} onClick={() => toggleFeature(f)} className={\`p-4 text-[9px] font-black uppercase border-2 border-black transition-all \${formData.features.includes(f) ? 'bg-black text-white shadow-inner text-white' : 'bg-white text-black opacity-30 hover:opacity-100'}\`}>{f}</button>))}</div></div>
-                    <div><p className="text-xs font-black uppercase text-brand-primary mb-6 border-b-4 border-black pb-2 text-black text-black text-black text-black text-black text-black">05. Marketplace Strategy</p><textarea rows={6} placeholder="DESCRIBE ASSET..." className="w-full border-4 border-black p-8 font-bold text-sm outline-none shadow-inner text-black text-black text-black text-black" value={formData.public_description} onChange={e=>setFormData({...formData, public_description:e.target.value})} /></div>
+                  <div className="max-w-2xl mx-auto space-y-12 sm:space-y-16 pb-20 text-black">
+                    {Object.keys(errors).length > 0 && <div className="bg-brand-primary p-6 border-4 border-black text-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] italic text-xs font-bold uppercase space-y-1 text-white"><p key="err-title" className="underline">Critical Validation Failures</p>{Object.values(errors).map((err: any, i) => <p key={i}>!! {err}</p>)}</div>}
+                    
+                    <div><p className="text-xs font-black uppercase text-brand-primary mb-6 border-b-4 border-black pb-2">01. Identity Persistence</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                            <div><label className="block text-[9px] font-black uppercase opacity-40 mb-1">Exterior Color*</label><input className={\`w-full border-4 border-black p-4 font-black uppercase text-sm outline-none \${errors.exterior_color?'border-brand-primary':''}\`} value={formData.exterior_color} onChange={e=>setFormData({...formData, exterior_color:e.target.value})} /></div>
+                            <div><label className="block text-[9px] font-black uppercase opacity-40 mb-1">Interior Color</label><input className="w-full border-4 border-black p-4 font-black uppercase text-sm outline-none" value={formData.interior_color} onChange={e=>setFormData({...formData, interior_color:e.target.value})} /></div>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-6">
+                            <div><label className="block text-[9px] font-black uppercase opacity-40 mb-1">Fuel Type</label><select className="w-full border-4 border-black p-4 font-black uppercase text-sm appearance-none bg-white text-black" value={formData.fuel_type} onChange={e=>setFormData({...formData, fuel_type:e.target.value})}><option value="">Unknown</option>{FUEL_TYPES.map(f => <option key={f} value={f}>{f}</option>)}</select></div>
+                            <div><label className="block text-[9px] font-black uppercase opacity-40 mb-1">Drivetrain</label><select className="w-full border-4 border-black p-4 font-black uppercase text-sm appearance-none bg-white text-black" value={formData.drivetrain} onChange={e=>setFormData({...formData, drivetrain:e.target.value})}><option value="">Unknown</option>{DRIVETRAINS.map(d => <option key={d} value={d}>{d}</option>)}</select></div>
+                        </div>
+                    </div>
+
+                    <div><p className="text-xs font-black uppercase text-brand-primary mb-6 border-b-4 border-black pb-2 text-black">02. Pricing & Market Strategy</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 text-black">
+                            <div className="space-y-6">
+                                <div><label className="block text-[9px] font-black uppercase mb-1 opacity-40 italic">Retail Price ($)*</label><input type="number" className={\`w-full border-4 border-black p-5 font-mono font-black text-3xl outline-none \${errors.price?'border-brand-primary':''}\`} value={formData.price} onChange={e=>setFormData({...formData, price:e.target.value})} /></div>
+                                <div><label className="block text-[9px] font-black uppercase mb-1 opacity-40 italic">Odometer (MI)*</label><input type="number" className={\`w-full border-4 border-black p-5 font-mono font-black text-3xl outline-none \${errors.mileage?'border-brand-primary':''}\`} value={formData.mileage} onChange={e=>setFormData({...formData, mileage:e.target.value})} /></div>
+                            </div>
+                            <div className="space-y-6 text-black">
+                                <div><label className="block text-[9px] font-black uppercase mb-1 opacity-40 italic text-black text-black">System Status*</label><select className="w-full border-4 border-black p-5 font-black uppercase text-xl appearance-none bg-white text-black text-black" value={formData.status} onChange={e=>setFormData({...formData, status:e.target.value})}><option value="draft">Draft</option><option value="available">Available</option><option value="sold">Sold</option></select></div>
+                                <div><label className="block text-[9px] font-black uppercase mb-1 opacity-40 italic">Location</label><input placeholder="e.g., FRONT ROW" className="w-full border-4 border-black p-5 font-black uppercase text-xl outline-none text-black" value={formData.lot_location} onChange={e=>setFormData({...formData, lot_location:e.target.value})} /></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div><p className="text-xs font-black uppercase text-brand-primary mb-6 border-b-4 border-black pb-2 text-black">03. Condition & Recon</p>
+                        <div className="space-y-8 text-black text-black">
+                            <select className="w-full border-4 border-black p-5 font-black uppercase outline-none text-2xl appearance-none bg-white text-black text-black text-black" value={formData.condition} onChange={e=>setFormData({...formData, condition:e.target.value})}><option value="Excellent">Excellent - Front Line</option><option value="Good">Good - Standard</option><option value="Fair">Fair - Value Unit</option><option value="Needs Work">Needs Work</option></select>
+                            {terminal.mode === 'add' && <label className="flex items-center gap-6 cursor-pointer bg-zinc-100 p-8 border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] text-black"><input type="checkbox" className="w-12 h-12 border-4 border-black checked:bg-brand-primary appearance-none cursor-pointer" checked={formData.initiate_recon} onChange={(e) => setFormData({ ...formData, initiate_recon: e.target.checked })} /><div><p className="text-xl font-black uppercase leading-none">Auto-Initiate Recon</p><p className="text-[10px] font-bold opacity-40 mt-2 uppercase text-black text-black text-black">Generate Shop Floor Ticket</p></div></label>}
+                        </div>
+                    </div>
+
+                    <div><p className="text-xs font-black uppercase text-brand-primary mb-6 border-b-4 border-black pb-2 text-black text-black">04. Feature Matrix</p><div className="grid grid-cols-2 sm:grid-cols-5 gap-3 text-black text-black">{COMMON_FEATURES.map(f => (<button key={f} onClick={() => toggleFeature(f)} className={\`p-4 text-[9px] font-black uppercase border-2 border-black transition-all \${formData.features.includes(f) ? 'bg-black text-white shadow-inner text-white' : 'bg-white text-black opacity-30 hover:opacity-100'}\`}>{f}</button>))}</div></div>
+
+                    <div><p className="text-xs font-black uppercase text-brand-primary mb-6 border-b-4 border-black pb-2 text-black text-black text-black text-black">05. Strategy</p><textarea rows={6} placeholder="DESCRIBE ASSET..." className="w-full border-4 border-black p-8 font-bold text-sm outline-none shadow-inner text-black text-black text-black text-black" value={formData.public_description} onChange={e=>setFormData({...formData, public_description:e.target.value})} /></div>
+
                     <div className="pt-12 border-t-4 border-black/10 flex flex-col sm:flex-row gap-6 text-black text-black text-black text-black">
-                        <button onClick={() => commitAsset(false)} className="flex-1 bg-black text-white py-10 font-black uppercase tracking-[0.3em] shadow-2xl hover:bg-brand-primary transition-all hover:-translate-y-1 text-white text-white text-white text-white text-white">Finalize & Close</button>
-                        <button onClick={() => commitAsset(true)} className="flex-1 bg-white text-black py-10 font-black uppercase tracking-[0.2em] border-4 border-black shadow-xl hover:bg-zinc-50 text-black text-black text-black text-black text-black">Save & Add Another</button>
+                        <button onClick={() => commitAsset(false)} className="flex-1 bg-black text-white py-10 font-black uppercase tracking-[0.3em] shadow-2xl hover:bg-brand-primary transition-all hover:-translate-y-1 text-white text-white">Finalize & Close</button>
+                        <button onClick={() => commitAsset(true)} className="flex-1 bg-white text-black py-10 font-black uppercase tracking-[0.2em] border-4 border-black shadow-xl hover:bg-zinc-50 transition-all hover:-translate-y-1 text-black text-black text-black text-black text-black">Save & Add Another</button>
                     </div>
                   </div>
                 ) : (
-                    <div className="max-w-xl mx-auto py-20 animate-in zoom-in-95 duration-500 text-center text-black text-black text-black text-black text-black text-black">
-                        <div className="w-24 h-24 bg-black text-white rounded-full flex items-center justify-center mx-auto mb-10 shadow-[8px_8px_0px_0px_rgba(227,66,52,1)] text-white text-white text-white text-white text-white text-white"><svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-white text-white text-white text-white text-white text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={4} d="M5 13l4 4L19 7" /></svg></div>
-                        <h3 className="text-5xl font-black uppercase italic tracking-tighter mb-12 text-black text-black text-black text-black">Asset Synced</h3>
-                        <div className="bg-zinc-50 border-4 border-black p-8 text-left space-y-6 mb-12 shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] text-black text-black text-black text-black text-black">
-                            <div className="flex justify-between border-b pb-2 text-black"><p className="text-[10px] font-black opacity-40 uppercase text-black">Identity</p><p className="font-black uppercase text-black">{formData.year} {formData.make} {formData.model}</p></div>
-                            <div className="flex justify-between border-b pb-2 text-black text-black text-black text-black"><p className="text-[10px] font-black opacity-40 uppercase text-black">Price</p><p className="font-mono font-black text-brand-primary text-black text-black">$\${Number(formData.price).toLocaleString()}</p></div>
+                    <div className="max-w-xl mx-auto py-20 animate-in zoom-in-95 duration-500 text-center text-black text-black text-black text-black">
+                        <div className="w-24 h-24 bg-black text-white rounded-full flex items-center justify-center mx-auto mb-10 shadow-[8px_8px_0px_0px_rgba(227,66,52,1)] text-white text-white text-white text-white text-white text-white"><svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={4} d="M5 13l4 4L19 7" /></svg></div>
+                        <h3 className="text-3xl sm:text-5xl font-black uppercase italic tracking-tighter mb-12 text-black text-black text-black text-black">Asset Synced</h3>
+                        <div className="bg-zinc-50 border-4 border-black p-8 text-left space-y-6 mb-12 shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] text-black text-black text-black">
+                            <div className="flex justify-between border-b pb-2 text-black text-black"><p className="text-[10px] font-black opacity-40 uppercase text-black">Identity</p><p className="font-black uppercase text-black text-black">{formData.year} {formData.make} {formData.model}</p></div>
+                            <div className="flex justify-between border-b pb-2 text-black text-black text-black text-black"><p className="text-[10px] font-black opacity-40 uppercase text-black">Price</p><p className="font-mono font-black text-brand-primary text-brand-primary text-brand-primary text-brand-primary">$\${Number(formData.price).toLocaleString()}</p></div>
                         </div>
-                        <div className="flex flex-col gap-4 text-black text-black text-black text-black text-black text-black text-black">
-                            <button onClick={openAddTerminal} className="w-full bg-black text-white py-8 font-black uppercase tracking-[0.3em] shadow-xl hover:bg-brand-primary transition-all text-white text-white text-white text-white text-white text-white text-white">Onboard Next Unit</button>
-                            <button onClick={() => setTerminal({ ...terminal, isOpen: false })} className="w-full bg-white text-black py-6 font-black uppercase border-4 border-black hover:bg-zinc-50 text-black text-black text-black text-black text-black text-black text-black text-black">Close Terminal</button>
+                        <div className="flex flex-col gap-4 text-black text-black text-black text-black">
+                            <button onClick={openAddTerminal} className="w-full bg-black text-white py-8 font-black uppercase tracking-[0.3em] shadow-xl hover:bg-brand-primary transition-all text-white text-white text-white">Onboard Next Unit</button>
+                            <button onClick={() => setTerminal({ ...terminal, isOpen: false })} className="w-full bg-white text-black py-6 font-black uppercase border-4 border-black hover:bg-zinc-50 text-black text-black text-black text-black text-black text-black text-black text-black text-black">Close Terminal</button>
                         </div>
                     </div>
                 )}
@@ -318,7 +338,7 @@ export default function VehicleInventory() {
 }
 \`;
 
-fs.writeFileSync('lotengine/app/admin/vehicles/page.tsx', code);
+fs.writeFileSync('app/admin/vehicles/page.tsx', code);
 `;
 
-fs.writeFileSync('recover_file.js', scriptContent);
+fs.writeFileSync('recover_file.js', \`const fs = require('fs');\nconst scriptContent = \\\`\${code.replace(/\\\\\`/g, '\\\\\\\\\`').replace(/\\\\\$/g, '\\\\\\\\\$')}\\\`;\nfs.writeFileSync('recover_file.js', scriptContent);\`);

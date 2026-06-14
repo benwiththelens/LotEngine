@@ -6,11 +6,16 @@ export default async function Home() {
   const headerList = await headers();
   const host = headerList.get("host") || "lot-engines.com";
 
-  const { data: tenant } = await supabase
+  let { data: tenant } = await supabase
     .from("tenants")
     .select("*")
     .eq("domain", host)
     .single();
+
+  if (!tenant) {
+    const { data: fallback } = await supabase.from("tenants").select("*").limit(1).single();
+    tenant = fallback;
+  }
 
   if (!tenant) return <div>Tenant Not Found</div>;
 

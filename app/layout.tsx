@@ -18,11 +18,16 @@ export async function generateMetadata(): Promise<Metadata> {
   const headerList = await headers();
   const host = headerList.get("host") || "lot-engines.com";
   
-  const { data: tenant } = await supabase
+  let { data: tenant } = await supabase
     .from("tenants")
     .select("business_name")
     .eq("domain", host)
     .single();
+
+  if (!tenant) {
+    const { data: fallback } = await supabase.from("tenants").select("business_name").limit(1).single();
+    tenant = fallback;
+  }
 
   return {
     title: tenant?.business_name || "LotEngine",
@@ -39,11 +44,16 @@ export default async function RootLayout({
   const host = headerList.get("host") || "lot-engines.com";
 
   // Fetch tenant data for dynamic branding
-  const { data: tenant } = await supabase
+  let { data: tenant } = await supabase
     .from("tenants")
     .select("*")
     .eq("domain", host)
     .single();
+
+  if (!tenant) {
+    const { data: fallback } = await supabase.from("tenants").select("*").limit(1).single();
+    tenant = fallback;
+  }
 
   // Inject theme variables from the database
   const themeStyles = {

@@ -81,7 +81,7 @@ export default async function Home() {
           <div className="space-y-4">
             {reviews.map((r, i) => (
               <div key={i} className="border-l-4 border-black pl-4">
-                <p className="text-sm font-bold italic leading-snug">"{r.text}"</p>
+                <p className="text-sm font-bold italic leading-snug">&quot;{r.text}&quot;</p>
                 <p className="mt-2 text-[10px] font-black uppercase opacity-40">— {r.name}</p>
               </div>
             ))}

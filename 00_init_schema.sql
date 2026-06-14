@@ -12,7 +12,7 @@ EXCEPTION
 END $$;
 
 DO $$ BEGIN
-    CREATE TYPE service_order_status AS ENUM ('intake', 'lift_1', 'lift_2', 'parts_hold', 'ready');
+    CREATE TYPE service_order_status AS ENUM ('intake', 'diagnostics', 'parts_hold', 'in_progress', 'ready');
 EXCEPTION
     WHEN duplicate_object THEN null;
 END $$;

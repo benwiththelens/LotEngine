@@ -12,6 +12,9 @@ import {
   useSensors,
   DragOverlay,
   useDroppable,
+  DragStartEvent,
+  DragOverEvent,
+  DragEndEvent,
 } from "@dnd-kit/core";
 import {
   SortableContext,
@@ -20,8 +23,6 @@ import {
   useSortable,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-
-type ViewMode = 'shop' | 'kanban';
 
 interface ServiceOrder {
   id: string;
@@ -64,73 +65,6 @@ const priorityColors = {
   low: 'border-l-blue-500'
 };
 
-// --- Sub-Component: Industrial Lift Graphic ---
-function LiftGraphic({ color, isOccupied }: { color: string, isOccupied: boolean }) {
-    return (
-        <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-20">
-            {/* Hydraulic Columns */}
-            <div className="absolute left-4 top-10 bottom-10 w-8 bg-black border-r-4 border-black/20" />
-            <div className="absolute right-4 top-10 bottom-10 w-8 bg-black border-l-4 border-black/20" />
-            
-            {/* Safety Yellow Warning Stripes at bottom of columns */}
-            <div className="absolute left-4 bottom-10 w-8 h-4 bg-[repeating-linear-gradient(45deg,#fbbf24,#fbbf24_10px,#000_10px,#000_20px)]" />
-            <div className="absolute right-4 bottom-10 w-8 h-4 bg-[repeating-linear-gradient(45deg,#fbbf24,#fbbf24_10px,#000_10px,#000_20px)]" />
-
-            {/* Cross Beam (Moves if occupied?) */}
-            <div className={`absolute left-4 right-4 h-12 border-y-4 border-black transition-all duration-700 ${isOccupied ? 'top-1/3' : 'bottom-20'}`} style={{ backgroundColor: color }}>
-                <div className="flex justify-between px-4 items-center h-full">
-                    <div className="w-2 h-2 rounded-full bg-white animate-pulse" />
-                    <div className="font-mono text-[8px] font-black text-white uppercase tracking-widest">Hydraulic System Active</div>
-                    <div className="w-2 h-2 rounded-full bg-white animate-pulse" />
-                </div>
-            </div>
-
-            {/* Floor Bolt Plates */}
-            <div className="absolute left-2 bottom-6 w-12 h-4 bg-black/40 skew-x-12" />
-            <div className="absolute right-2 bottom-6 w-12 h-4 bg-black/40 -skew-x-12" />
-        </div>
-    );
-}
-
-// --- Sub-Component: Droppable Lift ---
-function ShopLift({ id, orders, onExpand }: { id: string, orders: ServiceOrder[], onExpand: (order: ServiceOrder) => void }) {
-  const { setNodeRef, isOver } = useDroppable({ id });
-  const orderOnLift = orders.find(o => o.status === id);
-  const config = STATUS_CONFIG[id];
-
-  return (
-    <div 
-      ref={setNodeRef}
-      className={`relative flex-1 min-h-[320px] border-4 border-black p-8 transition-all flex flex-col items-center justify-center ${
-        isOver ? 'bg-zinc-200' : 'bg-white'
-      } shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] overflow-hidden`}
-    >
-      <LiftGraphic color={config.color} isOccupied={!!orderOnLift} />
-
-      <div className="absolute top-6 left-6 z-10 flex items-center gap-3">
-        <div className="w-4 h-4 border-2 border-black rotate-45" style={{ backgroundColor: config.color }} />
-        <span className="font-mono text-3xl font-black italic tracking-tighter uppercase text-black drop-shadow-sm">{config.label}</span>
-      </div>
-
-      {orderOnLift ? (
-        <div className="w-full max-w-sm z-10 animate-in fade-in zoom-in-95 duration-500">
-            <SortableCard order={orderOnLift} onExpand={onExpand} />
-        </div>
-      ) : (
-        <div className="text-center opacity-30 select-none pointer-events-none z-0">
-            <p className="text-7xl font-black italic uppercase tracking-tighter leading-none mb-1 text-zinc-300">Vacant</p>
-            <p className="font-mono text-xs font-black uppercase tracking-[0.3em]">Bay {id.slice(0, 2).toUpperCase()}</p>
-        </div>
-      )}
-
-      {/* Industrial Overlay Details */}
-      <div className="absolute bottom-4 right-4 font-mono text-[8px] font-black opacity-20 uppercase">
-        Max Load 12,000 LBS // LotEngine OS
-      </div>
-    </div>
-  );
-}
-
 // --- Sub-Component: Droppable Lane ---
 function ShopLane({ id, orders, onExpand, width = "w-72" }: { id: string, orders: ServiceOrder[], onExpand: (order: ServiceOrder) => void, width?: string }) {
   const { setNodeRef, isOver } = useDroppable({ id });
@@ -138,16 +72,16 @@ function ShopLane({ id, orders, onExpand, width = "w-72" }: { id: string, orders
   const config = STATUS_CONFIG[id];
 
   return (
-    <div className={`flex flex-col h-full ${width} shrink-0 p-2 rounded-xl transition-colors ${config.bg}`}>
-      <div className={`p-3 mb-4 flex justify-between items-center border-b-2 ${config.border} bg-white/50 backdrop-blur-sm rounded-lg shadow-sm`}>
+    <div className={`flex flex-col h-full ${width} shrink-0 p-2 transition-colors border-r-2 border-black/5 ${config.bg}`}>
+      <div className={`p-3 mb-4 flex justify-between items-center border-b-4 border-black bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]`}>
         <span className="text-[11px] font-black uppercase tracking-widest text-black">{config.label}</span>
-        <span className="font-mono text-[10px] font-black bg-black text-white px-2 py-0.5 rounded-md shadow-sm">{laneOrders.length}</span>
+        <span className="font-mono text-[10px] font-black bg-black text-white px-2 py-0.5">{laneOrders.length}</span>
       </div>
 
       <SortableContext items={laneOrders.map(o => o.id)} strategy={verticalListSortingStrategy}>
         <div 
           ref={setNodeRef}
-          className={`flex-1 space-y-4 overflow-y-auto pb-20 p-1 transition-colors rounded-lg ${
+          className={`flex-1 space-y-4 overflow-y-auto pb-20 p-1 transition-colors ${
             isOver ? 'bg-black/[0.03]' : ''
           }`}
         >
@@ -155,7 +89,7 @@ function ShopLane({ id, orders, onExpand, width = "w-72" }: { id: string, orders
             <SortableCard key={order.id} order={order} onExpand={onExpand} />
           ))}
           {laneOrders.length === 0 && (
-            <div className="border-4 border-dashed border-black/[0.03] rounded-lg p-12 text-center flex items-center justify-center h-40">
+            <div className="border-4 border-dashed border-black/[0.05] p-12 text-center flex items-center justify-center h-40">
                 <p className="text-[10px] font-black uppercase opacity-10 tracking-[0.2em] -rotate-12">No Assets</p>
             </div>
           )}
@@ -181,13 +115,13 @@ function SortableCard({ order, isOverlay = false, onExpand }: { order: ServiceOr
 
   return (
     <div ref={setNodeRef} style={style} {...attributes} {...listeners} className={cardClasses}>
-      <div className="flex justify-between items-start mb-3">
+      <div className="flex justify-between items-start mb-3 text-black">
         <div className="flex flex-col">
             <p className="text-[9px] font-black uppercase opacity-30 leading-none mb-1 tracking-tighter">Asset #{order.id.slice(0, 5)}</p>
             <h3 className="font-black uppercase italic leading-none text-xl tracking-tighter">{order.customer_name}</h3>
         </div>
         <div className="flex flex-col gap-2 items-end">
-          {order.is_internal_recon && <span className="text-[8px] font-black uppercase bg-brand-primary text-white px-2 py-0.5 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">RECON</span>}
+          {order.is_internal_recon && <span className="text-[8px] font-black uppercase bg-brand-primary text-white px-2 py-0.5 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] text-white">RECON</span>}
           <button 
             onPointerDown={(e) => e.stopPropagation()}
             onClick={(e) => {
@@ -203,7 +137,7 @@ function SortableCard({ order, isOverlay = false, onExpand }: { order: ServiceOr
       </div>
       
       {order.vehicles ? (
-        <div className="bg-zinc-50 p-2 border border-black/5 mb-4">
+        <div className="bg-zinc-50 p-2 border border-black/5 mb-4 text-black">
             <p className="text-[10px] font-black uppercase opacity-60 leading-tight">
                 {order.vehicles.year} {order.vehicles.make}<br />{order.vehicles.model}
             </p>
@@ -214,7 +148,7 @@ function SortableCard({ order, isOverlay = false, onExpand }: { order: ServiceOr
       
       <div className="mt-auto flex gap-1.5 items-center">
         <div className="flex-1" />
-        <p className="font-mono text-[11px] font-black leading-none bg-zinc-100 px-2 py-1 border border-black/5 shadow-sm">${(Number(order.parts_cost || 0) + Number(order.labor_cost || 0)).toLocaleString()}</p>
+        <p className="font-mono text-[11px] font-black leading-none bg-zinc-100 px-2 py-1 border border-black/5 shadow-sm text-black">${(Number(order.parts_cost || 0) + (Number(order.labor_hours || 0) * 125)).toLocaleString()}</p>
       </div>
     </div>
   );
@@ -258,7 +192,7 @@ function TerminalOverlay({
   const handleAddStep = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newStep.trim()) return;
-    const newChecklists = [...checklists, { id: Date.now().toString(), label: newStep.trim(), completed: false }];
+    const newChecklists = [...checklists, { id: crypto.randomUUID(), label: newStep.trim(), completed: false }];
     setChecklists(newChecklists);
     setNewStep("");
     await updateDatabase(newChecklists);
@@ -267,28 +201,28 @@ function TerminalOverlay({
   const currentIndex = KANBAN_ORDER.indexOf(order.status);
   
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-[4px] z-[100] flex items-center justify-center p-8">
-      <div className="bg-white border-4 border-black w-full h-full max-w-7xl flex flex-col shadow-[32px_32px_0px_0px_rgba(0,0,0,1)] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-[4px] z-[100] flex items-center justify-center p-0 md:p-8">
+      <div className="bg-white md:border-4 border-black w-full h-full max-w-7xl flex flex-col shadow-none md:shadow-[32px_32px_0px_0px_rgba(0,0,0,1)] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         {/* Terminal Header */}
-        <header className="p-8 border-b-4 border-black flex justify-between items-center bg-zinc-50 shrink-0">
-          <div className="flex items-center gap-8">
+        <header className="p-4 md:p-8 border-b-4 border-black flex justify-between items-center bg-zinc-50 shrink-0 text-black">
+          <div className="flex items-center gap-4 md:gap-8">
             <button 
               onClick={onClose}
               className="group flex items-center gap-2 hover:text-brand-primary transition-colors"
             >
-              <span className="text-4xl font-black">←</span>
-              <span className="font-black uppercase tracking-widest text-xs">Exit Terminal</span>
+              <span className="text-2xl md:text-4xl font-black">←</span>
+              <span className="font-black uppercase tracking-widest text-[8px] md:text-xs">Exit Terminal</span>
             </button>
             
-            <div className="h-12 w-1 bg-black/10" />
+            <div className="h-10 md:h-12 w-1 bg-black/10" />
             
             <div>
-              <div className="flex items-center gap-3 mb-1">
-                <h2 className="text-3xl font-black uppercase italic tracking-tighter leading-none">
+              <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-3 mb-1">
+                <h2 className="text-xl md:text-3xl font-black uppercase italic tracking-tighter leading-none">
                   {order.vehicles ? `${order.vehicles.year} ${order.vehicles.make} ${order.vehicles.model}` : 'Unlinked Asset'}
                 </h2>
                 {/* Priority Badge */}
-                <div className={`px-3 py-1 text-[10px] font-black uppercase tracking-widest border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] ${
+                <div className={`w-fit px-2 md:px-3 py-0.5 md:py-1 text-[8px] md:text-[10px] font-black uppercase tracking-widest border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] ${
                   order.priority === 'critical' ? 'bg-red-500 text-white' :
                   order.priority === 'high' ? 'bg-yellow-500 text-black' :
                   order.priority === 'standard' ? 'bg-green-500 text-white' :
@@ -297,20 +231,20 @@ function TerminalOverlay({
                   {order.priority}
                 </div>
               </div>
-              <div className="flex items-center gap-4">
-                <p className="font-mono text-sm font-bold opacity-60">CUSTOMER: {order.customer_name.toUpperCase()}</p>
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                <p className="font-mono text-[10px] md:text-sm font-bold opacity-60 uppercase">CUSTOMER: {order.customer_name}</p>
                 {order.requested_completion && (
                   <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-brand-primary animate-pulse" />
-                    <p className="font-mono text-sm font-bold text-brand-primary uppercase">ETA: {new Date(order.requested_completion).toLocaleString()}</p>
+                    <div className="w-1.5 h-1.5 rounded-full bg-brand-primary animate-pulse" />
+                    <p className="font-mono text-[10px] md:text-sm font-bold text-brand-primary uppercase">ETA: {new Date(order.requested_completion).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}</p>
                   </div>
                 )}
               </div>
             </div>
           </div>
           
-          <div className="flex items-center gap-6">
-            <div className="text-right">
+          <div className="hidden sm:flex items-center gap-6 text-right">
+            <div>
                 <p className="text-[10px] font-black uppercase opacity-40 leading-none mb-1">Terminal Status</p>
                 <p className="font-mono text-sm font-black uppercase">Active Connection // {STATUS_CONFIG[order.status]?.label.toUpperCase()}</p>
             </div>
@@ -318,25 +252,25 @@ function TerminalOverlay({
         </header>
 
         {/* Timeline */}
-        <div className="border-b-4 border-black bg-white p-6 shrink-0">
-          <div className="flex items-center justify-between relative max-w-4xl mx-auto">
-             <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-1 bg-zinc-200 -z-10" />
+        <div className="border-b-4 border-black bg-white p-3 md:p-6 shrink-0 overflow-x-auto">
+          <div className="flex items-center justify-between relative min-w-[500px] max-w-4xl mx-auto">
+             <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-0.5 md:h-1 bg-zinc-200 -z-10" />
              {KANBAN_ORDER.map((statusId, index) => {
                const config = STATUS_CONFIG[statusId];
                const isActive = statusId === order.status;
                const isPast = index <= currentIndex;
                
                return (
-                 <div key={statusId} className="flex flex-col items-center gap-2 bg-white px-4">
-                   <div className={`w-8 h-8 border-4 flex items-center justify-center transition-all duration-300 ${
-                     isActive ? 'border-brand-primary bg-brand-primary text-white scale-125 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.2)]' :
+                 <div key={statusId} className="flex flex-col items-center gap-1 md:gap-2 bg-white px-2 md:px-4">
+                   <div className={`w-6 h-6 md:w-8 md:h-8 border-2 md:border-4 flex items-center justify-center transition-all duration-300 ${
+                     isActive ? 'border-brand-primary bg-brand-primary text-white scale-110 md:scale-125 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.2)]' :
                      isPast ? 'border-black bg-black text-white' :
                      'border-zinc-300 bg-zinc-100 text-transparent'
                    }`}>
-                     {isPast && !isActive && <CheckCircle2 className="w-5 h-5" />}
-                     {isActive && <div className="w-3 h-3 bg-white animate-pulse" />}
+                     {isPast && !isActive && <CheckCircle2 className="w-3 h-3 md:w-5 md:h-5 text-white" />}
+                     {isActive && <div className="w-2 h-2 md:w-3 md:h-3 bg-white animate-pulse" />}
                    </div>
-                   <span className={`text-[10px] font-black uppercase tracking-widest transition-colors ${
+                   <span className={`text-[8px] md:text-[10px] font-black uppercase tracking-widest transition-colors ${
                      isActive ? 'text-brand-primary' :
                      isPast ? 'text-black' :
                      'text-zinc-400'
@@ -348,35 +282,35 @@ function TerminalOverlay({
         </div>
 
         {/* Main Terminal Body */}
-        <div className="flex-1 overflow-auto p-12 bg-zinc-100 flex gap-8">
-            <div className="flex-1 space-y-8 max-w-3xl">
+        <div className="flex-1 overflow-auto p-3 md:p-12 bg-zinc-100 flex flex-col lg:flex-row gap-6 md:gap-8">
+            <div className="flex-1 space-y-6 md:space-y-8 max-w-3xl">
                 {/* Checklists */}
-                <div className="bg-white border-4 border-black p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
-                    <h3 className="text-xl font-black uppercase italic tracking-tighter border-b-2 border-black pb-4 mb-6">Procedure Checklist</h3>
+                <div className="bg-white border-4 border-black p-4 md:p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+                    <h3 className="text-lg md:text-xl font-black uppercase italic tracking-tighter border-b-2 border-black pb-3 md:pb-4 mb-4 md:mb-6 text-black">Procedure Checklist</h3>
                     
-                    <div className="space-y-3 mb-8">
+                    <div className="space-y-2 md:space-y-3 mb-6 md:mb-8">
                         {checklists.map((step) => (
                             <div 
                                 key={step.id} 
-                                className={`flex items-center gap-4 p-4 border-2 transition-all cursor-pointer group ${
-                                    step.completed ? 'border-zinc-200 bg-zinc-50 opacity-60' : 'border-black bg-white hover:bg-zinc-50 hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-1 hover:-translate-x-1'
+                                className={`flex items-center gap-3 md:gap-4 p-3 md:p-4 border-2 transition-all cursor-pointer group ${
+                                    step.completed ? 'border-zinc-200 bg-zinc-50 opacity-60' : 'border-black bg-white hover:bg-zinc-50 hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 hover:-translate-x-0.5'
                                 }`}
                                 onClick={() => handleToggle(step.id)}
                             >
-                                <button className="shrink-0 transition-transform group-hover:scale-110">
+                                <button type="button" className="shrink-0 transition-transform group-hover:scale-110">
                                     {step.completed ? (
-                                        <CheckCircle2 className="w-6 h-6 text-brand-primary" />
+                                        <CheckCircle2 className="w-5 h-5 md:w-6 md:h-6 text-brand-primary" />
                                     ) : (
-                                        <Circle className="w-6 h-6 text-zinc-300 group-hover:text-black" />
+                                        <Circle className="w-5 h-5 md:w-6 md:h-6 text-zinc-300 group-hover:text-black" />
                                     )}
                                 </button>
-                                <span className={`font-mono text-sm font-bold uppercase transition-all ${step.completed ? 'line-through text-zinc-500' : 'text-black'}`}>
+                                <span className={`font-mono text-xs md:text-sm font-bold uppercase transition-all ${step.completed ? 'line-through text-zinc-500' : 'text-black'}`}>
                                     {step.label}
                                 </span>
                             </div>
                         ))}
                         {checklists.length === 0 && (
-                            <p className="text-sm font-mono opacity-50 italic text-center py-8">No procedures defined.</p>
+                            <p className="text-xs md:text-sm font-mono opacity-50 italic text-center py-6 md:py-8 text-black">No procedures defined.</p>
                         )}
                     </div>
 
@@ -385,66 +319,68 @@ function TerminalOverlay({
                             type="text"
                             value={newStep}
                             onChange={(e) => setNewStep(e.target.value)}
-                            placeholder="ADD NEW PROCEDURE..."
-                            className="flex-1 border-2 border-black p-4 font-mono text-sm font-bold uppercase outline-none focus:border-brand-primary focus:shadow-[4px_4px_0px_0px_rgba(227,66,52,0.2)] transition-all"
+                            placeholder="ADD PROCEDURE..."
+                            className="flex-1 border-2 border-black p-3 md:p-4 font-mono text-xs md:text-sm font-bold uppercase outline-none focus:border-brand-primary focus:shadow-[4px_4px_0px_0px_rgba(227,66,52,0.2)] transition-all text-black"
                         />
-                        <button type="submit" className="bg-black text-white px-8 py-4 hover:bg-brand-primary transition-colors flex items-center justify-center shadow-[4px_4px_0px_0px_rgba(0,0,0,0.2)] active:shadow-none active:translate-x-1 active:translate-y-1">
-                            <Plus className="w-6 h-6" />
+                        <button type="submit" className="bg-black text-white px-6 md:px-8 py-3 md:py-4 hover:bg-brand-primary transition-colors flex items-center justify-center shadow-[4px_4px_0px_0px_rgba(0,0,0,0.2)] active:shadow-none active:translate-x-0.5 active:translate-y-0.5">
+                            <Plus className="w-5 h-5 md:w-6 md:h-6 text-white" />
                         </button>
                     </form>
                 </div>
 
                 {/* Cost Inputs */}
-                <div className="bg-white border-4 border-black p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] grid grid-cols-2 gap-6">
+                <div className="bg-white border-4 border-black p-4 md:p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] grid grid-cols-2 gap-4 md:gap-6">
                     <div>
-                        <label className="block text-[10px] font-black uppercase mb-2 tracking-widest opacity-50">Parts Cost ($)</label>
+                        <label className="block text-[8px] md:text-[10px] font-black uppercase mb-1 md:mb-2 tracking-widest opacity-50 text-black">Parts Cost ($)</label>
                         <input 
                             type="number"
                             min="0"
                             step="0.01"
-                            className="w-full border-2 border-black p-4 font-mono font-black text-xl outline-none focus:border-brand-primary focus:shadow-[4px_4px_0px_0px_rgba(227,66,52,0.2)] transition-all" 
+                            className="w-full border-2 border-black p-3 md:p-4 font-mono font-black text-lg md:text-xl outline-none focus:border-brand-primary focus:shadow-[4px_4px_0px_0px_rgba(227,66,52,0.2)] transition-all text-black" 
                             value={partsCost}
                             onChange={(e) => setPartsCost(e.target.value)}
+                            onFocus={(e) => e.target.select()}
                             onBlur={() => updateOrderData({ parts_cost: parseFloat(partsCost) || 0 })}
                         />
                     </div>
                     <div>
-                        <label className="block text-[10px] font-black uppercase mb-2 tracking-widest opacity-50">Labor Hours</label>
+                        <label className="block text-[8px] md:text-[10px] font-black uppercase mb-1 md:mb-2 tracking-widest opacity-50 text-black">Labor Hours</label>
                         <input 
                             type="number"
                             min="0"
                             step="0.1"
-                            className="w-full border-2 border-black p-4 font-mono font-black text-xl outline-none focus:border-brand-primary focus:shadow-[4px_4px_0px_0px_rgba(227,66,52,0.2)] transition-all" 
+                            className="w-full border-2 border-black p-3 md:p-4 font-mono font-black text-lg md:text-xl outline-none focus:border-brand-primary focus:shadow-[4px_4px_0px_0px_rgba(227,66,52,0.2)] transition-all text-black" 
                             value={laborHours}
                             onChange={(e) => setLaborHours(e.target.value)}
+                            onFocus={(e) => e.target.select()}
                             onBlur={() => updateOrderData({ labor_hours: parseFloat(laborHours) || 0 })}
                         />
                     </div>
                 </div>
             </div>
             
-            <div className="flex-1 flex flex-col gap-8">
+            <div className="flex-1 flex flex-col gap-6 md:gap-8">
                 {/* Quick Actions */}
-                <div className="grid grid-cols-3 gap-4">
-                    <button className="bg-white border-2 border-black p-4 flex flex-col items-center justify-center gap-2 hover:bg-black hover:text-white transition-colors shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none group">
-                        <Clock className="w-6 h-6 group-hover:animate-pulse" />
-                        <span className="text-[10px] font-black uppercase tracking-widest">Start Timer</span>
+                <div className="grid grid-cols-3 gap-3 md:gap-4">
+                    <button type="button" className="bg-white border-2 border-black p-3 md:p-4 flex flex-col items-center justify-center gap-1 md:gap-2 hover:bg-black hover:text-white transition-colors shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none group text-black">
+                        <Clock className="w-5 h-5 md:w-6 md:h-6 group-hover:animate-pulse" />
+                        <span className="text-[8px] md:text-[10px] font-black uppercase tracking-widest">Timer</span>
                     </button>
-                    <button className="bg-white border-2 border-black p-4 flex flex-col items-center justify-center gap-2 hover:bg-black hover:text-white transition-colors shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none group">
-                        <Camera className="w-6 h-6 group-hover:scale-110 transition-transform" />
-                        <span className="text-[10px] font-black uppercase tracking-widest">Add Photo</span>
+                    <button type="button" className="bg-white border-2 border-black p-3 md:p-4 flex flex-col items-center justify-center gap-1 md:gap-2 hover:bg-black hover:text-white transition-colors shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none group text-black">
+                        <Camera className="w-5 h-5 md:w-6 md:h-6 group-hover:scale-110 transition-transform" />
+                        <span className="text-[8px] md:text-[10px] font-black uppercase tracking-widest">Photo</span>
                     </button>
-                    <button className="bg-white border-2 border-black p-4 flex flex-col items-center justify-center gap-2 hover:bg-black hover:text-white transition-colors shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none group">
-                        <MessageSquare className="w-6 h-6 group-hover:-translate-y-1 transition-transform" />
-                        <span className="text-[10px] font-black uppercase tracking-widest">Add Note</span>
+                    <button type="button" className="bg-white border-2 border-black p-3 md:p-4 flex flex-col items-center justify-center gap-1 md:gap-2 hover:bg-black hover:text-white transition-colors shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none group text-black">
+                        <MessageSquare className="w-5 h-5 md:w-6 md:h-6 group-hover:-translate-y-0.5 transition-transform" />
+                        <span className="text-[8px] md:text-[10px] font-black uppercase tracking-widest">Note</span>
                     </button>
                 </div>
 
                 {/* Notes */}
-                <div className="bg-white border-4 border-black p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex-1 flex flex-col">
-                    <h3 className="text-xl font-black uppercase italic tracking-tighter border-b-2 border-black pb-4 mb-4">Technician Notes</h3>
+                <div className="bg-white border-4 border-black p-4 md:p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex-1 flex flex-col">
+                    <h3 className="text-lg md:text-xl font-black uppercase italic tracking-tighter border-b-2 border-black pb-3 md:pb-4 mb-3 md:mb-4 text-black">Notes</h3>
                     <textarea 
-                        className="w-full flex-1 min-h-[200px] border-none resize-none font-mono text-sm bg-transparent outline-none text-zinc-700" 
+                        className="w-full flex-1 min-h-[150px] border-none resize-none font-mono text-xs md:text-sm bg-transparent outline-none text-zinc-700" 
                         placeholder="ENTER NOTES HERE..."
                         value={notes}
                         onChange={(e) => setNotes(e.target.value)}
@@ -455,10 +391,10 @@ function TerminalOverlay({
         </div>
 
         {/* Smart Footer */}
-        <footer className="p-6 border-t-4 border-black bg-white flex justify-between items-center shrink-0">
-            <div className="flex items-center gap-4">
-                <div className="w-3 h-3 rounded-full bg-brand-primary animate-pulse" />
-                <span className="font-mono text-[10px] font-black uppercase tracking-widest opacity-50">Terminal Active</span>
+        <footer className="p-4 md:p-6 border-t-4 border-black bg-white flex justify-between items-center shrink-0">
+            <div className="flex items-center gap-2 md:gap-4">
+                <div className="w-2 md:w-3 h-2 md:h-3 rounded-full bg-brand-primary animate-pulse" />
+                <span className="font-mono text-[8px] md:text-[10px] font-black uppercase tracking-widest opacity-50 text-black">Terminal Active</span>
             </div>
             
             {currentIndex < KANBAN_ORDER.length - 1 ? (
@@ -468,18 +404,17 @@ function TerminalOverlay({
                         await updateOrderData({ status: nextStatus });
                         onClose();
                     }}
-                    className="bg-brand-primary text-white px-12 py-5 font-black uppercase tracking-widest text-sm hover:bg-black transition-all border-b-4 border-r-4 border-black/30 shadow-[8px_8px_0px_0px_rgba(0,0,0,0.2)] active:translate-y-1 active:translate-x-1 active:shadow-none flex items-center gap-4 group"
+                    className="bg-brand-primary text-white px-6 md:px-12 py-3 md:py-5 font-black uppercase tracking-widest text-[10px] md:text-sm hover:bg-black transition-all border-b-4 border-r-4 border-black/30 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.2)] md:shadow-[8px_8px_0px_0px_rgba(0,0,0,0.2)] active:translate-y-1 active:translate-x-1 active:shadow-none flex items-center gap-2 md:gap-4 group text-white"
                 >
-                    Move to {STATUS_CONFIG[KANBAN_ORDER[currentIndex + 1]].label}
-                    <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform" />
+                    <span className="hidden xs:inline">Move to </span>{STATUS_CONFIG[KANBAN_ORDER[currentIndex + 1]].label}
+                    <ArrowRight className="w-4 h-4 md:w-5 md:h-5 group-hover:translate-x-1 md:group-hover:translate-x-2 transition-transform text-white" />
                 </button>
             ) : (
                 <button 
                     onClick={onClose}
-                    className="bg-green-500 text-white px-12 py-5 font-black uppercase tracking-widest text-sm hover:bg-black transition-all border-b-4 border-r-4 border-black/30 shadow-[8px_8px_0px_0px_rgba(0,0,0,0.2)] active:translate-y-1 active:translate-x-1 active:shadow-none flex items-center gap-4 group"
+                    className="bg-zinc-800 text-white px-8 md:px-12 py-3 md:py-5 font-black uppercase tracking-widest text-[10px] md:text-sm hover:bg-black transition-all border-b-4 border-r-4 border-black/30 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.2)] md:shadow-[8px_8px_0px_0px_rgba(0,0,0,0.2)] active:translate-y-1 active:translate-x-1 active:shadow-none text-white"
                 >
-                    <CheckCircle2 className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                    Complete Order
+                    Close Terminal
                 </button>
             )}
         </footer>
@@ -492,7 +427,6 @@ export default function ServiceBay() {
   const [orders, setOrders] = useState<ServiceOrder[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [showIntake, setShowIntake] = useState(false);
-  const [viewMode, setViewMode] = useState<ViewMode>('shop');
   const [terminal, setTerminal] = useState<{ isOpen: boolean; order: ServiceOrder | null }>({ isOpen: false, order: null });
   
   const [customerName, setCustomerName] = useState("");
@@ -517,21 +451,21 @@ export default function ServiceBay() {
     }
     if (tenant) {
       const { data } = await supabase.from("service_orders").select("*, vehicles(year, make, model, vin)").eq("tenant_id", tenant.id).order("created_at", { ascending: true });
-      if (data) setOrders(data);
+      if (data) setOrders(data as ServiceOrder[]);
     }
   }
 
-  const handleDragStart = (e: any) => setActiveId(e.active.id);
+  const handleDragStart = (e: DragStartEvent) => setActiveId(e.active.id as string);
 
-  const handleDragOver = (e: any) => {
+  const handleDragOver = (e: DragOverEvent) => {
     const { active, over } = e;
     if (!over) return;
     const activeOrder = orders.find(o => o.id === active.id);
     if (!activeOrder) return;
 
     let newStatus = activeOrder.status;
-    if (STATUS_CONFIG[over.id]) {
-      newStatus = over.id;
+    if (STATUS_CONFIG[over.id as string]) {
+      newStatus = over.id as string;
     } else {
       const overOrder = orders.find(o => o.id === over.id);
       if (overOrder) newStatus = overOrder.status;
@@ -542,13 +476,13 @@ export default function ServiceBay() {
     }
   };
 
-  const handleDragEnd = async (e: any) => {
+  const handleDragEnd = async (e: DragEndEvent) => {
     const { active, over } = e;
     setActiveId(null);
     if (!over) return;
     const activeOrder = orders.find(o => o.id === active.id);
     if (!activeOrder) return;
-    const newStatus = STATUS_CONFIG[over.id] ? over.id : (orders.find(o => o.id === over.id)?.status || activeOrder.status);
+    const newStatus = STATUS_CONFIG[over.id as string] ? (over.id as string) : (orders.find(o => o.id === over.id)?.status || activeOrder.status);
 
     const { error } = await supabase.from("service_orders").update({ status: newStatus }).eq("id", active.id);
     if (error) { alert(error.message); fetchOrders(); }
@@ -577,67 +511,30 @@ export default function ServiceBay() {
 
   return (
     <div className="flex flex-col h-screen bg-zinc-50 overflow-hidden">
-      <header className="p-6 bg-white border-b-4 border-black flex justify-between items-center z-20 shrink-0 shadow-sm">
-        <div className="flex items-center gap-6">
-          <div>
-            <p className="text-[10px] font-black uppercase tracking-widest text-brand-primary mb-1">Service Bay Hub</p>
-            <h1 className="text-3xl font-black uppercase italic tracking-tighter leading-none text-black">
-                {viewMode === 'shop' ? 'Shop Floor' : 'Kanban Grid'}
-            </h1>
-          </div>
-          <div className="h-10 w-[2px] bg-black/10" />
-          
-          <div className="flex border-2 border-black p-1 bg-zinc-100 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
-             <button 
-                onClick={() => setViewMode('shop')}
-                className={`px-4 py-1.5 text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === 'shop' ? 'bg-black text-white shadow-inner' : 'text-black opacity-40 hover:opacity-100'}`}
-             >
-                Spatial
-             </button>
-             <button 
-                onClick={() => setViewMode('kanban')}
-                className={`px-4 py-1.5 text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === 'kanban' ? 'bg-black text-white shadow-inner' : 'text-black opacity-40 hover:opacity-100'}`}
-             >
-                Grid
-             </button>
-          </div>
+      <header className="p-4 md:p-6 bg-white border-b-4 border-black flex justify-between items-center z-20 shrink-0 shadow-sm text-black">
+        <div>
+          <p className="text-[10px] font-black uppercase tracking-widest text-brand-primary mb-1">Service Bay Hub</p>
+          <h1 className="text-xl md:text-3xl font-black uppercase italic tracking-tighter leading-none text-black">Kanban Grid</h1>
         </div>
 
-        <button onClick={() => setShowIntake(true)} className="bg-black text-white px-10 py-4 font-black uppercase tracking-widest text-xs hover:bg-brand-primary transition-all border-b-4 border-r-4 border-black/30 shadow-xl active:translate-y-1 active:border-none">
-          Confirm Intake
+        <button onClick={() => setShowIntake(true)} className="bg-black text-white px-6 py-3 md:px-10 md:py-4 font-black uppercase tracking-widest text-[10px] md:text-xs hover:bg-brand-primary transition-all border-b-4 border-r-4 border-black/30 shadow-xl active:translate-y-1 active:border-none text-white">
+          Intake Asset
         </button>
       </header>
 
-      <main className="flex-1 p-8 overflow-hidden">
+      <main className="flex-1 p-4 md:p-8 overflow-hidden">
         <DndContext sensors={sensors} collisionDetection={closestCorners} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
-          
-          {viewMode === 'shop' ? (
-            <div className="flex gap-10 h-full">
-                <ShopLane id="intake" orders={orders} onExpand={handleExpand} width="w-80" />
-                
-                <div className="flex-1 flex flex-col gap-10">
-                    <ShopLift id="diagnostics" orders={orders} onExpand={handleExpand} />
-                    <ShopLift id="in_progress" orders={orders} onExpand={handleExpand} />
-                </div>
-                
-                <div className="flex flex-col gap-10">
-                    <ShopLane id="parts_hold" orders={orders} onExpand={handleExpand} />
-                    <ShopLane id="ready" orders={orders} onExpand={handleExpand} />
-                </div>
-            </div>
-          ) : (
-            <div className="flex gap-6 h-full overflow-x-auto pb-4">
-                {KANBAN_ORDER.map(id => (
-                    <ShopLane 
-                        key={id} 
-                        id={id} 
-                        orders={orders} 
-                        onExpand={handleExpand}
-                        width="w-80"
-                    />
-                ))}
-            </div>
-          )}
+          <div className="flex gap-4 md:gap-6 h-full overflow-x-auto pb-4">
+              {KANBAN_ORDER.map(id => (
+                  <ShopLane 
+                      key={id} 
+                      id={id} 
+                      orders={orders} 
+                      onExpand={handleExpand}
+                      width="w-72 md:w-80"
+                  />
+              ))}
+          </div>
 
           <DragOverlay adjustScale={false}>
             {activeId && activeOrder ? <SortableCard order={activeOrder} isOverlay /> : null}
@@ -657,7 +554,7 @@ export default function ServiceBay() {
       )}
 
       {showIntake && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-[4px] z-[100] flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-[4px] z-[100] flex items-center justify-center p-4 text-black">
           <div className="bg-white border-4 border-black w-full max-w-lg p-10 shadow-[20px_20px_0px_0px_rgba(227,66,52,1)]">
             <div className="flex justify-between items-start mb-8">
               <div>
@@ -669,13 +566,13 @@ export default function ServiceBay() {
             <form onSubmit={handleIntake} className="space-y-6">
               <div>
                 <label className="block text-[10px] font-black uppercase mb-2 tracking-widest opacity-50">Customer Authority</label>
-                <input autoFocus required className="w-full border-4 border-black p-4 font-black uppercase text-xl outline-none focus:ring-4 focus:ring-brand-primary/20" value={customerName} onChange={(e) => setCustomerName(e.target.value)} />
+                <input autoFocus required className="w-full border-4 border-black p-4 font-black uppercase text-xl outline-none focus:ring-4 focus:ring-brand-primary/20 text-black" value={customerName} onChange={(e) => setCustomerName(e.target.value)} />
               </div>
               <div>
                 <label className="block text-[10px] font-black uppercase mb-2 tracking-widest opacity-50">Asset VIN Signature</label>
-                <input placeholder="17-DIGIT VIN" className="w-full border-4 border-black p-4 font-mono font-black uppercase text-xl outline-none focus:ring-4 focus:ring-brand-primary/20" value={vehicleVin} onChange={(e) => setVehicleVin(e.target.value)} maxLength={17} />
+                <input placeholder="17-DIGIT VIN" className="w-full border-4 border-black p-4 font-mono font-black uppercase text-xl outline-none focus:ring-4 focus:ring-brand-primary/20 text-black" value={vehicleVin} onChange={(e) => setVehicleVin(e.target.value)} maxLength={17} />
               </div>
-              <button type="submit" className="w-full bg-black text-white py-5 font-black uppercase tracking-widest text-sm hover:bg-brand-primary transition-all shadow-[8px_8px_0px_0px_rgba(0,0,0,0.2)]">Open Service Ticket</button>
+              <button type="submit" className="w-full bg-black text-white py-5 font-black uppercase tracking-widest text-sm hover:bg-brand-primary transition-all shadow-[8px_8px_0px_0px_rgba(0,0,0,0.2)] text-white">Open Service Ticket</button>
             </form>
           </div>
         </div>

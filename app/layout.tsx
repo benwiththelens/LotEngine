@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, JetBrains_Mono } from "next/font/google";
+import { Geist, JetBrains_Mono } from "next/font/google";
 import { headers } from "next/headers";
 import { supabase } from "@/lib/supabase";
 import { Analytics } from "@vercel/analytics/react";

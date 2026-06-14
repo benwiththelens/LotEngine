@@ -108,7 +108,7 @@ export default async function PublicInventory() {
       <footer className="bg-black text-white p-12 mt-20">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-8">
           <p className="text-2xl font-black uppercase italic tracking-tighter">LotEngine</p>
-          <p className="text-[10px] font-bold opacity-50 uppercase tracking-widest">© 2026 {tenant.business_name} // Managed Infrastructure</p>
+          <p className="text-[10px] font-bold opacity-50 uppercase tracking-widest">© 2026 {tenant.business_name} {"//"} Managed Infrastructure</p>
         </div>
       </footer>
     </div>

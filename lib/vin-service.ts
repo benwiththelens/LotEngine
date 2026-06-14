@@ -17,7 +17,7 @@ export async function decodeVin(vin: string) {
   const results = data.Results;
 
   // Helper to find value by Variable name
-  const getVal = (name: string) => results.find((r: any) => r.Variable === name)?.Value;
+  const getVal = (name: string) => results.find((r: { Variable: string; Value: string | null }) => r.Variable === name)?.Value;
 
   return {
     year: parseInt(getVal("Model Year") || "0"),

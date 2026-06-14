@@ -48,7 +48,12 @@ export default function MarketingPage() {
             <a href="#demo" className="hover:text-white transition-colors">Operations</a>
             <a href="#pricing" className="hover:text-white transition-colors">Infrastructure</a>
         </div>
-        <button className="bg-zinc-900 border border-zinc-800 px-6 py-2 text-[10px] font-black uppercase tracking-widest hover:bg-zinc-800 transition-all">Login</button>
+        <Link 
+            href="/login"
+            className="bg-zinc-900 border border-zinc-800 px-6 py-2 text-[10px] font-black uppercase tracking-widest hover:bg-zinc-800 transition-all"
+        >
+            Login
+        </Link>
       </nav>
 
       {/* Hero Section */}

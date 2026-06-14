@@ -21,14 +21,16 @@ export function proxy(req: NextRequest) {
     hostname === 'lot-engine.com' || 
     hostname === 'www.lot-engine.com';
 
-  if (isMarketingDomain) {
-    // Standard routing for marketing site
+  const isAuthOrAdminPath = 
+    url.pathname.startsWith('/login') || 
+    url.pathname.startsWith('/admin');
+
+  if (isMarketingDomain && !isAuthOrAdminPath) {
+    // Standard routing for marketing site core pages
     return NextResponse.next();
   }
 
-  // Multi-tenant routing for other domains
-  // Rewrite everything to /(tenant)/[domain]/...
-  // This maps / to /(tenant)/[domain]/page.tsx
+  // Multi-tenant routing for all other cases (tenant domains OR auth/admin paths on marketing domain)
   url.pathname = `/${hostname}${url.pathname}`;
   return NextResponse.rewrite(url);
 }

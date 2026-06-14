@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import { Maximize2, Plus, CheckCircle2, Circle } from "lucide-react";
+import { Maximize2, Plus, CheckCircle2, Circle, Clock, Camera, MessageSquare, ArrowRight } from "lucide-react";
 import {
   DndContext,
   closestCorners,
@@ -232,14 +232,21 @@ function TerminalOverlay({
 }) {
   const [checklists, setChecklists] = useState(order.checklists || []);
   const [newStep, setNewStep] = useState("");
+  const [notes, setNotes] = useState(order.technician_notes || "");
+  const [partsCost, setPartsCost] = useState(order.parts_cost?.toString() || "0");
+  const [laborHours, setLaborHours] = useState(order.labor_hours?.toString() || "0");
+
+  const updateOrderData = async (updates: Partial<ServiceOrder>) => {
+    const { error } = await supabase.from("service_orders").update(updates).eq("id", order.id);
+    if (!error) {
+      onUpdate({ ...order, ...updates });
+    } else {
+      alert("Failed to update: " + error.message);
+    }
+  };
 
   const updateDatabase = async (newChecklists: typeof checklists) => {
-    const { error } = await supabase.from("service_orders").update({ checklists: newChecklists }).eq("id", order.id);
-    if (!error) {
-      onUpdate({ ...order, checklists: newChecklists });
-    } else {
-      alert("Failed to save checklist: " + error.message);
-    }
+    await updateOrderData({ checklists: newChecklists });
   };
 
   const handleToggle = async (id: string) => {
@@ -386,21 +393,96 @@ function TerminalOverlay({
                         </button>
                     </form>
                 </div>
+
+                {/* Cost Inputs */}
+                <div className="bg-white border-4 border-black p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] grid grid-cols-2 gap-6">
+                    <div>
+                        <label className="block text-[10px] font-black uppercase mb-2 tracking-widest opacity-50">Parts Cost ($)</label>
+                        <input 
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            className="w-full border-2 border-black p-4 font-mono font-black text-xl outline-none focus:border-brand-primary focus:shadow-[4px_4px_0px_0px_rgba(227,66,52,0.2)] transition-all" 
+                            value={partsCost}
+                            onChange={(e) => setPartsCost(e.target.value)}
+                            onBlur={() => updateOrderData({ parts_cost: parseFloat(partsCost) || 0 })}
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-[10px] font-black uppercase mb-2 tracking-widest opacity-50">Labor Hours</label>
+                        <input 
+                            type="number"
+                            min="0"
+                            step="0.1"
+                            className="w-full border-2 border-black p-4 font-mono font-black text-xl outline-none focus:border-brand-primary focus:shadow-[4px_4px_0px_0px_rgba(227,66,52,0.2)] transition-all" 
+                            value={laborHours}
+                            onChange={(e) => setLaborHours(e.target.value)}
+                            onBlur={() => updateOrderData({ labor_hours: parseFloat(laborHours) || 0 })}
+                        />
+                    </div>
+                </div>
             </div>
             
             <div className="flex-1 flex flex-col gap-8">
-                {/* Notes placeholder */}
-                <div className="bg-white border-4 border-black p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex-1">
+                {/* Quick Actions */}
+                <div className="grid grid-cols-3 gap-4">
+                    <button className="bg-white border-2 border-black p-4 flex flex-col items-center justify-center gap-2 hover:bg-black hover:text-white transition-colors shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none group">
+                        <Clock className="w-6 h-6 group-hover:animate-pulse" />
+                        <span className="text-[10px] font-black uppercase tracking-widest">Start Timer</span>
+                    </button>
+                    <button className="bg-white border-2 border-black p-4 flex flex-col items-center justify-center gap-2 hover:bg-black hover:text-white transition-colors shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none group">
+                        <Camera className="w-6 h-6 group-hover:scale-110 transition-transform" />
+                        <span className="text-[10px] font-black uppercase tracking-widest">Add Photo</span>
+                    </button>
+                    <button className="bg-white border-2 border-black p-4 flex flex-col items-center justify-center gap-2 hover:bg-black hover:text-white transition-colors shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none group">
+                        <MessageSquare className="w-6 h-6 group-hover:-translate-y-1 transition-transform" />
+                        <span className="text-[10px] font-black uppercase tracking-widest">Add Note</span>
+                    </button>
+                </div>
+
+                {/* Notes */}
+                <div className="bg-white border-4 border-black p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex-1 flex flex-col">
                     <h3 className="text-xl font-black uppercase italic tracking-tighter border-b-2 border-black pb-4 mb-4">Technician Notes</h3>
                     <textarea 
-                        className="w-full h-full min-h-[300px] border-none resize-none font-mono text-sm bg-transparent outline-none text-zinc-700" 
+                        className="w-full flex-1 min-h-[200px] border-none resize-none font-mono text-sm bg-transparent outline-none text-zinc-700" 
                         placeholder="ENTER NOTES HERE..."
-                        value={order.technician_notes || ''}
-                        readOnly
+                        value={notes}
+                        onChange={(e) => setNotes(e.target.value)}
+                        onBlur={() => updateOrderData({ technician_notes: notes })}
                     />
                 </div>
             </div>
         </div>
+
+        {/* Smart Footer */}
+        <footer className="p-6 border-t-4 border-black bg-white flex justify-between items-center shrink-0">
+            <div className="flex items-center gap-4">
+                <div className="w-3 h-3 rounded-full bg-brand-primary animate-pulse" />
+                <span className="font-mono text-[10px] font-black uppercase tracking-widest opacity-50">Terminal Active</span>
+            </div>
+            
+            {currentIndex < KANBAN_ORDER.length - 1 ? (
+                <button 
+                    onClick={async () => {
+                        const nextStatus = KANBAN_ORDER[currentIndex + 1];
+                        await updateOrderData({ status: nextStatus });
+                        onClose();
+                    }}
+                    className="bg-brand-primary text-white px-12 py-5 font-black uppercase tracking-widest text-sm hover:bg-black transition-all border-b-4 border-r-4 border-black/30 shadow-[8px_8px_0px_0px_rgba(0,0,0,0.2)] active:translate-y-1 active:translate-x-1 active:shadow-none flex items-center gap-4 group"
+                >
+                    Move to {STATUS_CONFIG[KANBAN_ORDER[currentIndex + 1]].label}
+                    <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform" />
+                </button>
+            ) : (
+                <button 
+                    onClick={onClose}
+                    className="bg-green-500 text-white px-12 py-5 font-black uppercase tracking-widest text-sm hover:bg-black transition-all border-b-4 border-r-4 border-black/30 shadow-[8px_8px_0px_0px_rgba(0,0,0,0.2)] active:translate-y-1 active:translate-x-1 active:shadow-none flex items-center gap-4 group"
+                >
+                    <CheckCircle2 className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                    Complete Order
+                </button>
+            )}
+        </footer>
       </div>
     </div>
   );

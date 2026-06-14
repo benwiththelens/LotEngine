@@ -244,7 +244,7 @@ export default function MarketingPage() {
       <section id="infrastructure" className="min-h-screen py-24 px-8 max-w-7xl mx-auto border-t-2 border-zinc-800 text-white">
         <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-4 text-white">
           <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-500 mb-2 text-zinc-500">Pricing Protocols</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-500 mb-2">Pricing Protocols</p>
             <h2 className="text-4xl md:text-6xl font-black uppercase italic tracking-tighter leading-none text-white">Infrastructure Tiers</h2>
           </div>
         </div>
@@ -263,21 +263,21 @@ export default function MarketingPage() {
                 <h3 className="text-3xl font-black uppercase italic tracking-tighter text-white">The Engine</h3>
                 <div className="text-right text-white">
                   <p className="font-mono text-3xl font-black text-white">$499</p>
-                  <p className="font-mono text-[10px] font-bold uppercase text-zinc-500 mt-1 text-zinc-500">/ Month</p>
+                  <p className="font-mono text-[10px] font-bold uppercase text-zinc-500 mt-1">/ Month</p>
                 </div>
               </div>
-              <p className="text-zinc-400 text-sm font-medium mb-10 leading-relaxed text-zinc-400">The core headless operating system for rapid lot management.</p>
+              <p className="text-zinc-400 text-sm font-medium mb-10 leading-relaxed">The core headless operating system for rapid lot management.</p>
               
               <ul className="space-y-4 mb-12 text-white">
                 {["Multi-Tenant Database Access", "Mobile Asset Capture Wireframe", "5-Stage Service Kanban", "Automated Syndication Kits"].map((feat) => (
-                  <li key={feat} className="flex gap-3 items-center text-[11px] font-bold uppercase tracking-wider text-zinc-500">
-                    <div className="w-1.5 h-1.5 bg-zinc-800" />
+                  <li key={feat} className="flex gap-3 items-center text-[10px] font-mono font-bold uppercase tracking-wider text-zinc-400">
+                    <div className="w-1.5 h-1.5 border border-white rounded-full shrink-0" />
                     {feat}
                   </li>
                 ))}
               </ul>
             </div>
-            <button className="w-full bg-transparent border-2 border-zinc-800 text-white py-5 text-xs font-black uppercase tracking-[0.2em] hover:bg-zinc-900 transition-all text-white">
+            <button className="w-full bg-transparent border border-zinc-800 text-white py-5 text-xs font-black uppercase tracking-[0.2em] transition-all">
               Deploy Engine
             </button>
           </motion.div>
@@ -290,27 +290,26 @@ export default function MarketingPage() {
             viewport={{ once: true }}
             className="bg-black border border-zinc-800 p-12 flex flex-col justify-between relative overflow-hidden text-white"
           >
-            <div className="absolute top-0 right-0 bg-[#0055FF] text-white text-[8px] font-black uppercase px-3 py-1 tracking-widest italic text-white">Enterprise</div>
             <div>
               <div className="flex justify-between items-start mb-8 text-white">
                 <h3 className="text-3xl font-black uppercase italic tracking-tighter text-white">The Custom Chassis</h3>
-                <div className="text-right text-white text-white">
-                  <p className="font-mono text-lg font-black text-zinc-500 text-white">$4,500 Setup</p>
-                  <p className="font-mono text-3xl font-black text-white text-white">$499 <span className="text-xs font-bold text-zinc-500 uppercase tracking-tighter text-zinc-500">/mo</span></p>
+                <div className="text-right text-white">
+                  <p className="font-mono text-lg font-black text-zinc-500">$4,500 Setup</p>
+                  <p className="font-mono text-3xl font-black text-white">$499 <span className="text-xs font-bold text-zinc-500 uppercase tracking-tighter">/mo</span></p>
                 </div>
               </div>
-              <p className="text-zinc-400 text-sm font-medium mb-10 leading-relaxed text-zinc-400">Enterprise infrastructure and high-fidelity physical onboarding.</p>
+              <p className="text-zinc-400 text-sm font-medium mb-10 leading-relaxed">Enterprise infrastructure and high-fidelity physical onboarding.</p>
               
               <ul className="space-y-4 mb-12 text-white">
                 {["Everything in The Engine", "Custom Next.js Storefront on Your Domain", "On-Site Workflow Integration", "Mechanic Camera Training"].map((feat) => (
-                  <li key={feat} className="flex gap-3 items-center text-[11px] font-bold uppercase tracking-wider text-white">
-                    <div className="w-1.5 h-1.5 bg-[#0055FF]" />
+                  <li key={feat} className="flex gap-3 items-center text-[10px] font-mono font-bold uppercase tracking-wider text-zinc-400">
+                    <div className="w-1.5 h-1.5 border border-white rounded-full shrink-0" />
                     {feat}
                   </li>
                 ))}
               </ul>
             </div>
-            <button className="w-full bg-[#0055FF] text-white py-5 text-xs font-black uppercase tracking-[0.2em] hover:brightness-110 transition-all shadow-[8px_8px_0px_0px_rgba(0,85,255,0.1)] text-white">
+            <button className="w-full bg-transparent border border-zinc-800 text-white py-5 text-xs font-black uppercase tracking-[0.2em] hover:bg-zinc-900 transition-all">
               Request Enterprise Build
             </button>
           </motion.div>

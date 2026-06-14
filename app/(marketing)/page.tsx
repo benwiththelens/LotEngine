@@ -105,9 +105,9 @@ export default function MarketingPage() {
     <div className="min-h-screen bg-[#09090b] text-white font-sans selection:bg-[#0055FF]/30">
       {/* Navigation */}
       <nav className="border-b border-zinc-800 bg-[#09090b]/80 backdrop-blur-md sticky top-0 z-50 p-6 flex justify-between items-center text-white">
-        <div className="flex items-center gap-4 text-white">
+        <div className="flex items-center gap-4 text-white text-white">
             <img src="/logo.png" alt="LotEngine Logo" className="w-8 h-8 object-contain" />
-            <span className="font-black uppercase tracking-tighter text-xl italic text-white">LotEngine</span>
+            <span className="font-black uppercase tracking-tighter text-xl italic text-white text-white">LotEngine</span>
         </div>
         <div className="hidden md:flex gap-8 text-[10px] font-bold uppercase tracking-[0.3em] text-zinc-500">
             <a href="#demo" className="hover:text-white transition-colors">Workflow</a>
@@ -123,12 +123,12 @@ export default function MarketingPage() {
       </nav>
 
       {/* Hero Section */}
-      <section className="p-8 md:p-24 flex flex-col items-center text-center text-white">
+      <section className="p-8 md:p-24 flex flex-col items-center text-center text-white text-white">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
-          className="max-w-4xl"
+          className="max-w-4xl text-white"
         >
           <div className="inline-flex items-center gap-2 px-3 py-1 border border-zinc-800 text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500 mb-8">
             <Zap size={12} className="text-[#0055FF]" />
@@ -147,7 +147,7 @@ export default function MarketingPage() {
             </div>
             <Link 
               href="/specs"
-              className="bg-transparent border border-zinc-800 text-zinc-500 px-12 py-5 text-xs font-black uppercase tracking-widest hover:text-white hover:border-zinc-500 transition-all w-full sm:w-auto h-[78px] flex items-center justify-center"
+              className="bg-transparent border border-zinc-800 text-zinc-500 px-12 py-5 text-xs font-black uppercase tracking-widest hover:text-white hover:border-zinc-500 transition-all w-full sm:w-auto h-[78px] flex items-center justify-center text-white"
             >
               View Specs
             </Link>
@@ -163,10 +163,10 @@ export default function MarketingPage() {
         >
           <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10" />
           <div className="flex flex-col items-center gap-4 text-zinc-700">
-             <div className="w-20 h-20 border-4 border-zinc-800 flex items-center justify-center">
+             <div className="w-20 h-20 border-4 border-zinc-800 flex items-center justify-center text-zinc-700">
                 <div className="w-0 h-0 border-t-[15px] border-t-transparent border-l-[25px] border-l-zinc-800 border-b-[15px] border-b-transparent ml-2" />
              </div>
-             <p className="font-mono text-xs font-black uppercase tracking-[0.5em]">SYSTEM PREVIEW // 16:9 LOOP</p>
+             <p className="font-mono text-xs font-black uppercase tracking-[0.5em] text-zinc-700">SYSTEM PREVIEW // 16:9 LOOP</p>
           </div>
         </motion.div>
       </section>
@@ -177,7 +177,7 @@ export default function MarketingPage() {
           <motion.div
             animate={{ x: [0, -1000] }}
             transition={{ repeat: Infinity, duration: 20, ease: "linear" }}
-            className="flex gap-20 items-center"
+            className="flex gap-20 items-center text-white"
           >
             {marqueeItems.map((item, i) => (
               <span key={i} className="font-mono text-xs font-black uppercase tracking-[0.8em] text-zinc-500 italic text-zinc-500">
@@ -203,9 +203,9 @@ export default function MarketingPage() {
       {/* #demo Section (Workflow) */}
       <section id="demo" className="min-h-screen py-24 px-8 max-w-7xl mx-auto text-white">
         <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-4 text-white">
-          <div>
+          <div className="text-white">
             <p className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-500 mb-2 text-zinc-500">System Workflow</p>
-            <h2 className="text-4xl md:text-6xl font-black uppercase italic tracking-tighter leading-none text-white">Operational Engine</h2>
+            <h2 className="text-4xl md:text-6xl font-black uppercase italic tracking-tighter leading-none text-white text-white">Operational Engine</h2>
           </div>
         </div>
         
@@ -219,19 +219,19 @@ export default function MarketingPage() {
               viewport={{ once: true }}
               className="p-12 border-r-2 border-b-2 border-zinc-800 flex flex-col justify-between group hover:bg-zinc-900/30 transition-colors text-white"
             >
-              <div>
-                <div className="mb-8">{pillar.icon}</div>
-                <h3 className="text-2xl font-black uppercase italic tracking-tighter mb-6 text-white">{pillar.title}</h3>
-                <p className="text-zinc-500 text-sm font-medium leading-relaxed mb-12">
+              <div className="text-white">
+                <div className="mb-8 text-white">{pillar.icon}</div>
+                <h3 className="text-2xl font-black uppercase italic tracking-tighter mb-6 text-white text-white">{pillar.title}</h3>
+                <p className="text-zinc-500 text-sm font-medium leading-relaxed mb-12 text-zinc-500">
                   {pillar.description}
                 </p>
-                <div className="aspect-video bg-zinc-900/50 border border-zinc-800 flex items-center justify-center mb-12">
+                <div className="aspect-video bg-zinc-900/50 border border-zinc-800 flex items-center justify-center mb-12 text-white">
                   <p className="font-mono text-[10px] text-zinc-500 uppercase tracking-widest text-center px-4 leading-relaxed text-zinc-500">
                     // ASSET_PENDING: <br />AWAITING_RENDER_PIPELINE....
                   </p>
                 </div>
               </div>
-              <div className="flex flex-col gap-4 text-white">
+              <div className="flex flex-col gap-4 text-white text-white">
                 <div className="font-mono text-[8px] font-black uppercase tracking-[0.4em] text-zinc-700 text-zinc-700">INFRASTRUCTURE // {pillar.detail}</div>
                 <div className="w-12 h-1 bg-zinc-800 group-hover:w-full group-hover:bg-[#0055FF] transition-all duration-500" />
               </div>
@@ -243,41 +243,41 @@ export default function MarketingPage() {
       {/* #infrastructure Section (Pricing) */}
       <section id="infrastructure" className="min-h-screen py-24 px-8 max-w-7xl mx-auto border-t-2 border-zinc-800 text-white">
         <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-4 text-white">
-          <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-500 mb-2">Pricing Protocols</p>
-            <h2 className="text-4xl md:text-6xl font-black uppercase italic tracking-tighter leading-none text-white">Infrastructure Tiers</h2>
+          <div className="text-white">
+            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-500 mb-2 text-zinc-500">Pricing Protocols</p>
+            <h2 className="text-4xl md:text-6xl font-black uppercase italic tracking-tighter leading-none text-white text-white">Infrastructure Tiers</h2>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-white">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-white text-white">
           {/* The Engine */}
           <motion.div 
             initial={{ opacity: 0, x: -20 }}
             whileInView={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5 }}
             viewport={{ once: true }}
-            className="bg-black border border-zinc-800 p-12 flex flex-col justify-between text-white"
+            className="bg-black border border-zinc-800 p-12 flex flex-col justify-between text-white text-white"
           >
-            <div>
-              <div className="flex justify-between items-start mb-8 text-white">
-                <h3 className="text-3xl font-black uppercase italic tracking-tighter text-white">The Engine</h3>
-                <div className="text-right text-white">
-                  <p className="font-mono text-3xl font-black text-white">$499</p>
-                  <p className="font-mono text-[10px] font-bold uppercase text-zinc-500 mt-1">/ Month</p>
+            <div className="text-white">
+              <div className="flex justify-between items-start mb-8 text-white text-white">
+                <h3 className="text-3xl font-black uppercase italic tracking-tighter text-white text-white">The Engine</h3>
+                <div className="text-right text-white text-white">
+                  <p className="font-mono text-3xl font-black text-white text-white">$499</p>
+                  <p className="font-mono text-[10px] font-bold uppercase text-zinc-500 mt-1 text-zinc-500 text-zinc-500">/ Month</p>
                 </div>
               </div>
-              <p className="text-zinc-400 text-sm font-medium mb-10 leading-relaxed">The core headless operating system for rapid lot management.</p>
+              <p className="text-zinc-400 text-sm font-medium mb-10 leading-relaxed text-zinc-400 text-zinc-400">The core headless operating system for rapid lot management.</p>
               
-              <ul className="space-y-4 mb-12 text-white">
+              <ul className="space-y-4 mb-12 text-white text-white">
                 {["Multi-Tenant Database Access", "Mobile Asset Capture Wireframe", "5-Stage Service Kanban", "Automated Syndication Kits"].map((feat) => (
-                  <li key={feat} className="flex gap-3 items-center text-[10px] font-mono font-bold uppercase tracking-wider text-zinc-400">
-                    <div className="w-1.5 h-1.5 border border-white rounded-full shrink-0" />
+                  <li key={feat} className="flex gap-3 items-center text-[10px] font-mono font-bold uppercase tracking-wider text-zinc-400 text-zinc-400">
+                    <div className="w-1.5 h-1.5 bg-[#0055FF] rounded-full shrink-0" />
                     {feat}
                   </li>
                 ))}
               </ul>
             </div>
-            <button className="w-full bg-transparent border border-zinc-800 text-white py-5 text-xs font-black uppercase tracking-[0.2em] transition-all">
+            <button className="w-full bg-transparent border border-zinc-800 text-white py-5 text-xs font-black uppercase tracking-[0.2em] transition-all text-white">
               Deploy Engine
             </button>
           </motion.div>
@@ -288,28 +288,29 @@ export default function MarketingPage() {
             whileInView={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5 }}
             viewport={{ once: true }}
-            className="bg-black border border-zinc-800 p-12 flex flex-col justify-between relative overflow-hidden text-white"
+            className="bg-black border border-zinc-800 p-12 flex flex-col justify-between relative overflow-hidden text-white text-white"
           >
-            <div>
-              <div className="flex justify-between items-start mb-8 text-white">
-                <h3 className="text-3xl font-black uppercase italic tracking-tighter text-white">The Custom Chassis</h3>
-                <div className="text-right text-white">
-                  <p className="font-mono text-lg font-black text-zinc-500">$4,500 Setup</p>
-                  <p className="font-mono text-3xl font-black text-white">$499 <span className="text-xs font-bold text-zinc-500 uppercase tracking-tighter">/mo</span></p>
+            <div className="absolute top-0 right-0 bg-[#0055FF] text-white text-[8px] font-black uppercase px-3 py-1 tracking-widest italic text-white text-white">Enterprise</div>
+            <div className="text-white">
+              <div className="flex justify-between items-start mb-8 text-white text-white">
+                <h3 className="text-3xl font-black uppercase italic tracking-tighter text-white text-white">The Custom Chassis</h3>
+                <div className="text-right text-white text-white">
+                  <p className="font-mono text-lg font-black text-zinc-500 text-white text-white">$4,500 Setup</p>
+                  <p className="font-mono text-3xl font-black text-white text-white text-white">$499 <span className="text-xs font-bold text-zinc-500 uppercase tracking-tighter text-zinc-500 text-zinc-500">/mo</span></p>
                 </div>
               </div>
-              <p className="text-zinc-400 text-sm font-medium mb-10 leading-relaxed">Enterprise infrastructure and high-fidelity physical onboarding.</p>
+              <p className="text-zinc-400 text-sm font-medium mb-10 leading-relaxed text-zinc-400 text-zinc-400">Enterprise infrastructure and high-fidelity physical onboarding.</p>
               
-              <ul className="space-y-4 mb-12 text-white">
+              <ul className="space-y-4 mb-12 text-white text-white">
                 {["Everything in The Engine", "Custom Next.js Storefront on Your Domain", "On-Site Workflow Integration", "Mechanic Camera Training"].map((feat) => (
-                  <li key={feat} className="flex gap-3 items-center text-[10px] font-mono font-bold uppercase tracking-wider text-zinc-400">
-                    <div className="w-1.5 h-1.5 border border-white rounded-full shrink-0" />
+                  <li key={feat} className="flex gap-3 items-center text-[11px] font-mono font-bold uppercase tracking-wider text-white text-white">
+                    <div className="w-1.5 h-1.5 bg-[#0055FF] rounded-full shrink-0" />
                     {feat}
                   </li>
                 ))}
               </ul>
             </div>
-            <button className="w-full bg-transparent border border-zinc-800 text-white py-5 text-xs font-black uppercase tracking-[0.2em] hover:bg-zinc-900 transition-all">
+            <button className="w-full bg-[#0055FF] text-white py-5 text-xs font-black uppercase tracking-[0.2em] hover:brightness-110 transition-all text-white">
               Request Enterprise Build
             </button>
           </motion.div>
@@ -317,31 +318,31 @@ export default function MarketingPage() {
       </section>
 
       {/* Footer CTA Section */}
-      <section id="deploy" className="p-8 md:p-32 text-center border-t-2 border-zinc-800 bg-[#09090b] text-white">
+      <section id="deploy" className="p-8 md:p-32 text-center border-t-2 border-zinc-800 bg-[#09090b] text-white text-white">
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           whileInView={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5 }}
           viewport={{ once: true }}
-          className="text-white"
+          className="text-white text-white"
         >
           <h2 className="text-5xl md:text-8xl font-black uppercase italic tracking-tighter mb-16 text-white text-white">
             Ready to Deploy?
           </h2>
-          <div className="max-w-md mx-auto text-white">
+          <div className="max-w-md mx-auto text-white text-white">
             <DemoTerminal />
           </div>
         </motion.div>
       </section>
 
       {/* Footer */}
-      <footer className="p-12 border-t-2 border-zinc-800 bg-[#09090b] text-white">
-        <div className="flex flex-col md:flex-row justify-between items-center gap-8 text-zinc-500 text-zinc-500">
-          <div className="flex items-center gap-4 text-white text-white">
-            <img src="/logo.png" alt="LotEngine Logo" className="w-6 h-6 object-contain grayscale opacity-50 hover:grayscale-0 hover:opacity-100 transition-all cursor-pointer" />
+      <footer className="p-12 border-t-2 border-zinc-800 bg-[#09090b] text-white text-white">
+        <div className="flex flex-col md:flex-row justify-between items-center gap-8 text-zinc-500 text-zinc-500 text-zinc-500">
+          <div className="flex items-center gap-4 text-white text-white text-white">
+            <img src="/logo.png" alt="LotEngine Logo" className="w-6 h-6 object-contain grayscale opacity-50 hover:grayscale-0 hover:opacity-100 transition-all cursor-pointer text-white" />
             <span className="font-mono text-[10px] font-black uppercase tracking-widest italic text-white text-white">LotEngine OS // v0.3.0</span>
           </div>
-          <div className="flex gap-8 font-mono text-[8px] font-black uppercase tracking-[0.5em] text-white text-white">
+          <div className="flex gap-8 font-mono text-[8px] font-black uppercase tracking-[0.5em] text-white text-white text-white">
             <span>© 2026 LotEngine Inc.</span>
             <span className="text-zinc-700 text-zinc-700">Built for the Asphalt.</span>
           </div>

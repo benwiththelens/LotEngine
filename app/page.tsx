@@ -21,19 +21,18 @@ export default async function Home() {
   if (!tenant) return <div>Tenant Not Found</div>;
 
   // 2. Fetch "Fresh on the Lot" (Featured) Inventory
-  // Using !inner join to filter out ghost cars (units without images)
+  // Simplified query: Fetch 6 available units. We'll show a placeholder if images are missing.
   const { data: vehicles } = await supabase
     .from("vehicles")
     .select(`
       *,
-      vehicle_images!inner (
+      vehicle_images (
         storage_url
       )
     `)
     .eq("tenant_id", tenant.id)
     .eq("is_inventory", true)
     .eq("status", "available")
-    .eq("vehicle_images.is_primary", true)
     .order("created_at", { ascending: false })
     .limit(6);
 

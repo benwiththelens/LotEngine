@@ -67,9 +67,16 @@ CREATE TABLE IF NOT EXISTS service_orders (
     customer_name TEXT NOT NULL,
     customer_phone TEXT,
     status service_order_status DEFAULT 'intake',
-    mechanic_notes TEXT,
-    parts_cost NUMERIC(12, 2) DEFAULT 0.00,
+    priority TEXT CHECK (priority IN ('critical', 'high', 'standard', 'low')) DEFAULT 'standard',
+    last_status_change TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    requested_completion TIMESTAMP WITH TIME ZONE,
+    assigned_technician_id UUID REFERENCES auth.users(id),
+    parts_cost NUMERIC(10, 2) DEFAULT 0.00,
+    labor_hours NUMERIC(5, 2) DEFAULT 0.00,
     labor_cost NUMERIC(12, 2) DEFAULT 0.00,
+    checklists JSONB DEFAULT '[]'::jsonb,
+    technician_notes TEXT DEFAULT '',
+    mechanic_notes TEXT,
     is_internal_recon BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMPTZ DEFAULT now()
 );

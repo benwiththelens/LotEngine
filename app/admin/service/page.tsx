@@ -22,6 +22,30 @@ import { CSS } from "@dnd-kit/utilities";
 
 type ViewMode = 'shop' | 'kanban';
 
+interface ServiceOrder {
+  id: string;
+  tenant_id: string;
+  vehicle_id: string | null;
+  customer_name: string;
+  status: string;
+  priority: 'critical' | 'high' | 'standard' | 'low';
+  last_status_change: string;
+  requested_completion: string | null;
+  assigned_technician_id: string | null;
+  parts_cost: number;
+  labor_hours: number;
+  labor_cost?: number;
+  checklists: Array<{ id: string; label: string; completed: boolean }>;
+  technician_notes: string;
+  is_internal_recon?: boolean;
+  vehicles?: {
+    year: number;
+    make: string;
+    model: string;
+    vin: string;
+  };
+}
+
 const STATUS_CONFIG: Record<string, { label: string; color: string; type: 'lane' | 'lift' }> = {
   intake: { label: "Intake Lane", color: "#64748b", type: 'lane' },
   lift_1: { label: "Lift 01", color: "#3b82f6", type: 'lift' },
@@ -61,7 +85,7 @@ function LiftGraphic({ color, isOccupied }: { color: string, isOccupied: boolean
 }
 
 // --- Sub-Component: Droppable Lift ---
-function ShopLift({ id, label, color, orders }: { id: string, label: string, color: string, orders: any[] }) {
+function ShopLift({ id, label, color, orders }: { id: string, label: string, color: string, orders: ServiceOrder[] }) {
   const { setNodeRef, isOver } = useDroppable({ id });
   const orderOnLift = orders.find(o => o.status === id);
 
@@ -99,7 +123,7 @@ function ShopLift({ id, label, color, orders }: { id: string, label: string, col
 }
 
 // --- Sub-Component: Droppable Lane ---
-function ShopLane({ id, label, color, orders, width = "w-72" }: { id: string, label: string, color: string, orders: any[], width?: string }) {
+function ShopLane({ id, label, color, orders, width = "w-72" }: { id: string, label: string, color: string, orders: ServiceOrder[], width?: string }) {
   const { setNodeRef, isOver } = useDroppable({ id });
   const laneOrders = orders.filter(o => o.status === id);
 
@@ -132,7 +156,7 @@ function ShopLane({ id, label, color, orders, width = "w-72" }: { id: string, la
 }
 
 // --- Sub-Component: Sortable Card ---
-function SortableCard({ order, isOverlay = false }: { order: any, isOverlay?: boolean }) {
+function SortableCard({ order, isOverlay = false }: { order: ServiceOrder, isOverlay?: boolean }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: order.id });
 
   const style = {
@@ -188,7 +212,7 @@ function SortableCard({ order, isOverlay = false }: { order: any, isOverlay?: bo
 }
 
 export default function ServiceBay() {
-  const [orders, setOrders] = useState<any[]>([]);
+  const [orders, setOrders] = useState<ServiceOrder[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [showIntake, setShowIntake] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('shop');

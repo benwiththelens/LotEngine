@@ -46,15 +46,22 @@ interface ServiceOrder {
   };
 }
 
-const STATUS_CONFIG: Record<string, { label: string; color: string; type: 'lane' | 'lift' }> = {
-  intake: { label: "Intake Lane", color: "#64748b", type: 'lane' },
-  lift_1: { label: "Lift 01", color: "#3b82f6", type: 'lift' },
-  lift_2: { label: "Lift 02", color: "#8b5cf6", type: 'lift' },
-  parts_hold: { label: "Parts Hold", color: "#f59e0b", type: 'lane' },
-  ready: { label: "Ready / Pickup", color: "#10b981", type: 'lane' },
+const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; border: string }> = {
+  intake: { label: "Intake", color: "#64748b", bg: "bg-gray-100", border: "border-gray-300" },
+  diagnostics: { label: "Diagnostics", color: "#3b82f6", bg: "bg-blue-100", border: "border-blue-300" },
+  parts_hold: { label: "Awaiting Parts", color: "#f59e0b", bg: "bg-yellow-100", border: "border-yellow-300" },
+  in_progress: { label: "In Progress", color: "#8b5cf6", bg: "bg-purple-100", border: "border-purple-300" },
+  ready: { label: "Ready", color: "#10b981", bg: "bg-green-100", border: "border-green-300" },
 };
 
-const KANBAN_ORDER = ['intake', 'lift_1', 'lift_2', 'parts_hold', 'ready'];
+const KANBAN_ORDER = ['intake', 'diagnostics', 'parts_hold', 'in_progress', 'ready'];
+
+const priorityColors = {
+  critical: 'border-l-red-500',
+  high: 'border-l-yellow-500',
+  standard: 'border-l-green-500',
+  low: 'border-l-blue-500'
+};
 
 // --- Sub-Component: Industrial Lift Graphic ---
 function LiftGraphic({ color, isOccupied }: { color: string, isOccupied: boolean }) {
@@ -85,9 +92,10 @@ function LiftGraphic({ color, isOccupied }: { color: string, isOccupied: boolean
 }
 
 // --- Sub-Component: Droppable Lift ---
-function ShopLift({ id, label, color, orders }: { id: string, label: string, color: string, orders: ServiceOrder[] }) {
+function ShopLift({ id, orders }: { id: string, orders: ServiceOrder[] }) {
   const { setNodeRef, isOver } = useDroppable({ id });
   const orderOnLift = orders.find(o => o.status === id);
+  const config = STATUS_CONFIG[id];
 
   return (
     <div 
@@ -96,11 +104,11 @@ function ShopLift({ id, label, color, orders }: { id: string, label: string, col
         isOver ? 'bg-zinc-200' : 'bg-white'
       } shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] overflow-hidden`}
     >
-      <LiftGraphic color={color} isOccupied={!!orderOnLift} />
+      <LiftGraphic color={config.color} isOccupied={!!orderOnLift} />
 
       <div className="absolute top-6 left-6 z-10 flex items-center gap-3">
-        <div className="w-4 h-4 border-2 border-black rotate-45" style={{ backgroundColor: color }} />
-        <span className="font-mono text-3xl font-black italic tracking-tighter uppercase text-black drop-shadow-sm">{label}</span>
+        <div className="w-4 h-4 border-2 border-black rotate-45" style={{ backgroundColor: config.color }} />
+        <span className="font-mono text-3xl font-black italic tracking-tighter uppercase text-black drop-shadow-sm">{config.label}</span>
       </div>
 
       {orderOnLift ? (
@@ -110,7 +118,7 @@ function ShopLift({ id, label, color, orders }: { id: string, label: string, col
       ) : (
         <div className="text-center opacity-30 select-none pointer-events-none z-0">
             <p className="text-7xl font-black italic uppercase tracking-tighter leading-none mb-1 text-zinc-300">Vacant</p>
-            <p className="font-mono text-xs font-black uppercase tracking-[0.3em]">Bay {id.replace('lift_', '0')}</p>
+            <p className="font-mono text-xs font-black uppercase tracking-[0.3em]">Bay {id.slice(0, 2).toUpperCase()}</p>
         </div>
       )}
 
@@ -123,22 +131,23 @@ function ShopLift({ id, label, color, orders }: { id: string, label: string, col
 }
 
 // --- Sub-Component: Droppable Lane ---
-function ShopLane({ id, label, color, orders, width = "w-72" }: { id: string, label: string, color: string, orders: ServiceOrder[], width?: string }) {
+function ShopLane({ id, orders, width = "w-72" }: { id: string, orders: ServiceOrder[], width?: string }) {
   const { setNodeRef, isOver } = useDroppable({ id });
   const laneOrders = orders.filter(o => o.status === id);
+  const config = STATUS_CONFIG[id];
 
   return (
-    <div className={`flex flex-col h-full ${width} shrink-0`}>
-      <div className="bg-black text-white p-3 mb-4 flex justify-between items-center border-b-4" style={{ borderColor: color }}>
-        <span className="text-[10px] font-black uppercase tracking-widest italic">{label}</span>
-        <span className="font-mono text-[10px] opacity-60 bg-white/10 px-2 rounded-full">{laneOrders.length}</span>
+    <div className={`flex flex-col h-full ${width} shrink-0 p-2 rounded-xl transition-colors ${config.bg}`}>
+      <div className={`p-3 mb-4 flex justify-between items-center border-b-2 ${config.border} bg-white/50 backdrop-blur-sm rounded-lg shadow-sm`}>
+        <span className="text-[11px] font-black uppercase tracking-widest text-black">{config.label}</span>
+        <span className="font-mono text-[10px] font-black bg-black text-white px-2 py-0.5 rounded-md shadow-sm">{laneOrders.length}</span>
       </div>
 
       <SortableContext items={laneOrders.map(o => o.id)} strategy={verticalListSortingStrategy}>
         <div 
           ref={setNodeRef}
-          className={`flex-1 space-y-4 overflow-y-auto pb-20 p-2 transition-colors rounded-lg border-2 border-transparent ${
-            isOver ? 'bg-black/[0.05] border-black/5' : 'bg-transparent'
+          className={`flex-1 space-y-4 overflow-y-auto pb-20 p-1 transition-colors rounded-lg ${
+            isOver ? 'bg-black/[0.03]' : ''
           }`}
         >
           {laneOrders.map((order) => (
@@ -165,7 +174,7 @@ function SortableCard({ order, isOverlay = false }: { order: ServiceOrder, isOve
     opacity: isDragging ? 0.3 : 1,
   };
 
-  const cardClasses = `bg-white border-2 border-black p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] group cursor-grab active:cursor-grabbing transition-all hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] ${
+  const cardClasses = `bg-white border-2 border-black border-l-4 ${priorityColors[order.priority] || 'border-l-zinc-300'} p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] group cursor-grab active:cursor-grabbing transition-all hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] ${
     isOverlay ? 'shadow-[16px_16px_0px_0px_rgba(227,66,52,0.2)] rotate-2 scale-105 ring-4 ring-brand-primary' : ''
   }`;
 
@@ -190,20 +199,6 @@ function SortableCard({ order, isOverlay = false }: { order: ServiceOrder, isOve
       )}
       
       <div className="mt-auto flex gap-1.5 items-center">
-        <div className="flex gap-1">
-            {KANBAN_ORDER.map((key, idx) => {
-                const currentIdx = KANBAN_ORDER.indexOf(order.status);
-                const active = idx <= currentIdx;
-                const isCurrent = idx === currentIdx;
-                return (
-                    <div key={key} className={`w-2.5 h-2.5 border transition-all ${isCurrent ? 'border-black' : 'border-black/5'}`}
-                         style={{ 
-                            backgroundColor: active ? STATUS_CONFIG[key].color : 'transparent',
-                            borderRadius: isCurrent ? '0px' : '50%' 
-                         }} />
-                );
-            })}
-        </div>
         <div className="flex-1" />
         <p className="font-mono text-[11px] font-black leading-none bg-zinc-100 px-2 py-1 border border-black/5 shadow-sm">${(Number(order.parts_cost || 0) + Number(order.labor_cost || 0)).toLocaleString()}</p>
       </div>
@@ -330,16 +325,16 @@ export default function ServiceBay() {
           
           {viewMode === 'shop' ? (
             <div className="flex gap-10 h-full">
-                <ShopLane id="intake" label={STATUS_CONFIG.intake.label} color={STATUS_CONFIG.intake.color} orders={orders} width="w-80" />
+                <ShopLane id="intake" orders={orders} width="w-80" />
                 
                 <div className="flex-1 flex flex-col gap-10">
-                    <ShopLift id="lift_1" label={STATUS_CONFIG.lift_1.label} color={STATUS_CONFIG.lift_1.color} orders={orders} />
-                    <ShopLift id="lift_2" label={STATUS_CONFIG.lift_2.label} color={STATUS_CONFIG.lift_2.color} orders={orders} />
+                    <ShopLift id="diagnostics" orders={orders} />
+                    <ShopLift id="in_progress" orders={orders} />
                 </div>
                 
                 <div className="flex flex-col gap-10">
-                    <ShopLane id="parts_hold" label={STATUS_CONFIG.parts_hold.label} color={STATUS_CONFIG.parts_hold.color} orders={orders} />
-                    <ShopLane id="ready" label={STATUS_CONFIG.ready.label} color={STATUS_CONFIG.ready.color} orders={orders} />
+                    <ShopLane id="parts_hold" orders={orders} />
+                    <ShopLane id="ready" orders={orders} />
                 </div>
             </div>
           ) : (
@@ -348,8 +343,6 @@ export default function ServiceBay() {
                     <ShopLane 
                         key={id} 
                         id={id} 
-                        label={STATUS_CONFIG[id].label} 
-                        color={STATUS_CONFIG[id].color} 
                         orders={orders} 
                         width="w-80"
                     />

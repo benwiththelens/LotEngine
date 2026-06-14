@@ -146,9 +146,12 @@ export default function MarketingPage() {
             <div className="w-full max-w-md">
               <DemoTerminal />
             </div>
-            <button className="bg-transparent border-2 border-zinc-800 text-white px-12 py-5 text-sm font-black uppercase tracking-widest hover:bg-zinc-900 transition-all w-full sm:w-auto h-[78px]">
+            <Link 
+              href="/specs"
+              className="bg-transparent border border-zinc-800 text-zinc-500 px-12 py-5 text-xs font-black uppercase tracking-widest hover:text-white hover:border-zinc-500 transition-all w-full sm:w-auto h-[78px] flex items-center justify-center"
+            >
               View Specs
-            </button>
+            </Link>
           </div>
         </motion.div>
 

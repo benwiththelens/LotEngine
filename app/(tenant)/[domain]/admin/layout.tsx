@@ -47,8 +47,8 @@ export default function AdminLayout({
       <aside className="hidden md:flex w-20 bg-black text-white flex-col items-center py-6 shrink-0 border-r-4 border-brand-primary/20">
         {/* Compact Logo Mark */}
         <div className="mb-10">
-          <div className="relative w-12 h-12 bg-white flex items-center justify-center italic font-black text-2xl shadow-[4px_4px_0px_0px_rgba(255,255,255,0.2)]">
-            <span className="absolute left-[10%] bottom-[10%] text-black font-black italic">L</span>
+          <div className="relative w-12 h-12 flex items-center justify-center italic font-black text-2xl shadow-[4px_4px_0px_0px_rgba(255,255,255,0.2)]">
+            <span className="absolute left-[10%] bottom-[10%] text-white font-black italic z-10 leading-none">L</span>
             <div className="absolute right-[20%] top-[25%] w-[25%] h-[50%] bg-[#0055FF]" />
           </div>
         </div>

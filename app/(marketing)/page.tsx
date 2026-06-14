@@ -39,8 +39,11 @@ export default function MarketingPage() {
     <div className="min-h-screen bg-[#09090b] text-white font-sans selection:bg-[#0055FF]/30">
       {/* Navigation */}
       <nav className="border-b border-zinc-800 bg-[#09090b]/80 backdrop-blur-md sticky top-0 z-50 p-6 flex justify-between items-center">
-        <div className="flex items-center gap-2">
-            <div className="bg-[#0055FF] text-white italic font-black text-xl px-2">L</div>
+        <div className="flex items-center gap-4">
+            <div className="relative w-8 h-8 bg-white flex items-center justify-center">
+                <span className="absolute left-[10%] bottom-[10%] text-black font-black text-xl italic">L</span>
+                <div className="absolute right-[20%] top-[25%] w-[25%] h-[50%] bg-[#0055FF]" />
+            </div>
             <span className="font-black uppercase tracking-tighter text-xl italic">LotEngine</span>
         </div>
         <div className="hidden md:flex gap-8 text-[10px] font-bold uppercase tracking-[0.3em] text-zinc-500">

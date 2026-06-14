@@ -13,19 +13,38 @@ export default function Icon() {
     (
       <div
         style={{
-          fontSize: 24,
-          background: '#E34234',
+          background: 'white',
           width: '100%',
           height: '100%',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          color: 'white',
-          fontWeight: 900,
-          fontStyle: 'italic',
+          position: 'relative',
         }}
       >
-        L
+        {/* The White L (offset left) */}
+        <div style={{
+          position: 'absolute',
+          left: '10%',
+          bottom: '15%',
+          fontSize: 32,
+          color: 'black',
+          fontWeight: 900,
+          fontStyle: 'italic',
+          fontFamily: 'JetBrains Mono',
+        }}>
+          L
+        </div>
+        
+        {/* The Blue Bar (offset right) */}
+        <div style={{
+          position: 'absolute',
+          right: '25%',
+          top: '25%',
+          width: '20%',
+          height: '50%',
+          background: '#0055FF',
+        }} />
       </div>
     ),
     {

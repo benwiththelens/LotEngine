@@ -16,10 +16,11 @@ export default function MarketingPage() {
 
   const pillars = [
     {
-      title: "Studio-Grade Asset Capture",
+      title: "Pro-Grade Asset Capture",
       description: "Pro-photographer designed mobile wireframes ensure every unit is captured with technical precision. No specialized hardware required.",
       icon: <Camera size={24} className="text-[#0055FF]" />,
-      detail: "Sequential mapping engine"
+      detail: "Sequential mapping engine",
+      hasPreview: true
     },
     {
       title: "The 18% Revenue Engine",
@@ -46,7 +47,7 @@ export default function MarketingPage() {
         <div className="hidden md:flex gap-8 text-[10px] font-bold uppercase tracking-[0.3em] text-zinc-500">
             <a href="#pillars" className="hover:text-white transition-colors">Architecture</a>
             <a href="#demo" className="hover:text-white transition-colors">Operations</a>
-            <a href="#pricing" className="hover:text-white transition-colors">Infrastructure</a>
+            <a href="#infrastructure" className="hover:text-white transition-colors">Infrastructure</a>
         </div>
         <Link 
             href="/login"
@@ -131,8 +132,15 @@ export default function MarketingPage() {
         </div>
       </section>
 
-      {/* 3 Pillars Section */}
-      <section id="pillars" className="p-8 md:p-24 max-w-7xl mx-auto">
+      {/* #demo Section (Operations) */}
+      <section id="demo" className="min-h-screen py-24 px-8 max-w-7xl mx-auto">
+        <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-4">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-500 mb-2 text-white">System Operations</p>
+            <h2 className="text-4xl md:text-6xl font-black uppercase italic tracking-tighter leading-none text-white">The Workflow</h2>
+          </div>
+        </div>
+        
         <div className="grid grid-cols-1 md:grid-cols-3 gap-0 border-t-2 border-l-2 border-zinc-800">
           {pillars.map((pillar, i) => (
             <motion.div
@@ -145,10 +153,17 @@ export default function MarketingPage() {
             >
               <div>
                 <div className="mb-8">{pillar.icon}</div>
-                <h3 className="text-2xl font-black uppercase italic tracking-tighter mb-6">{pillar.title}</h3>
+                <h3 className="text-2xl font-black uppercase italic tracking-tighter mb-6 text-white">{pillar.title}</h3>
                 <p className="text-zinc-500 text-sm font-medium leading-relaxed mb-12">
                   {pillar.description}
                 </p>
+                {pillar.hasPreview && (
+                  <div className="aspect-video bg-zinc-900/50 border border-zinc-800 flex items-center justify-center mb-12">
+                    <p className="font-mono text-[10px] text-zinc-500 uppercase tracking-widest text-center px-4">
+                      // ASSET_PENDING: AWAITING_RENDER_PIPELINE....
+                    </p>
+                  </div>
+                )}
               </div>
               <div className="flex flex-col gap-4">
                 <div className="font-mono text-[8px] font-black uppercase tracking-[0.4em] text-zinc-700">INFRASTRUCTURE // {pillar.detail}</div>
@@ -159,12 +174,12 @@ export default function MarketingPage() {
         </div>
       </section>
 
-      {/* Infrastructure Section (Deployment Tiers) */}
-      <section id="pricing" className="p-8 md:p-24 max-w-7xl mx-auto border-t-2 border-zinc-800">
+      {/* #infrastructure Section (Pricing) */}
+      <section id="infrastructure" className="min-h-screen py-24 px-8 max-w-7xl mx-auto border-t-2 border-zinc-800">
         <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-4">
           <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-500 mb-2">Service Protocols</p>
-            <h2 className="text-4xl md:text-6xl font-black uppercase italic tracking-tighter leading-none">Infrastructure Tiers</h2>
+            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-500 mb-2 text-white">Service Protocols</p>
+            <h2 className="text-4xl md:text-6xl font-black uppercase italic tracking-tighter leading-none text-white">Infrastructure Tiers</h2>
           </div>
         </div>
 
@@ -179,7 +194,7 @@ export default function MarketingPage() {
           >
             <div>
               <div className="flex justify-between items-start mb-8">
-                <h3 className="text-3xl font-black uppercase italic tracking-tighter">The Engine</h3>
+                <h3 className="text-3xl font-black uppercase italic tracking-tighter text-white">The Engine</h3>
                 <div className="text-right">
                   <p className="font-mono text-3xl font-black text-white">$499</p>
                   <p className="font-mono text-[10px] font-bold uppercase text-zinc-500 mt-1">/ Month</p>
@@ -187,7 +202,7 @@ export default function MarketingPage() {
               </div>
               <p className="text-zinc-400 text-sm font-medium mb-10 leading-relaxed">The core headless operating system for rapid lot management.</p>
               
-              <ul className="space-y-4 mb-12">
+              <ul className="space-y-4 mb-12 text-white">
                 {["Multi-Tenant Database Access", "Mobile Asset Capture Wireframe", "5-Stage Service Kanban", "Automated Syndication Kits"].map((feat) => (
                   <li key={feat} className="flex gap-3 items-center text-[11px] font-bold uppercase tracking-wider text-zinc-500">
                     <div className="w-1.5 h-1.5 bg-zinc-800" />
@@ -196,7 +211,7 @@ export default function MarketingPage() {
                 ))}
               </ul>
             </div>
-            <button className="w-full bg-transparent border-2 border-zinc-800 text-white py-5 text-xs font-black uppercase tracking-[0.2em] hover:bg-zinc-900 transition-all">
+            <button className="w-full bg-transparent border-2 border-zinc-800 text-white py-5 text-xs font-black uppercase tracking-[0.2em] hover:bg-zinc-900 transition-all text-white">
               Deploy Engine
             </button>
           </motion.div>
@@ -212,15 +227,15 @@ export default function MarketingPage() {
             <div className="absolute top-0 right-0 bg-[#0055FF] text-white text-[8px] font-black uppercase px-3 py-1 tracking-widest italic">Enterprise</div>
             <div>
               <div className="flex justify-between items-start mb-8">
-                <h3 className="text-3xl font-black uppercase italic tracking-tighter">The Custom Chassis</h3>
-                <div className="text-right">
+                <h3 className="text-3xl font-black uppercase italic tracking-tighter text-white">The Custom Chassis</h3>
+                <div className="text-right text-white">
                   <p className="font-mono text-lg font-black text-zinc-500">$4,500 Setup</p>
                   <p className="font-mono text-3xl font-black text-white">$499 <span className="text-xs font-bold text-zinc-500 uppercase tracking-tighter">/mo</span></p>
                 </div>
               </div>
               <p className="text-zinc-400 text-sm font-medium mb-10 leading-relaxed">Enterprise infrastructure and high-fidelity physical onboarding.</p>
               
-              <ul className="space-y-4 mb-12">
+              <ul className="space-y-4 mb-12 text-white">
                 {["Everything in The Engine", "Custom Next.js Storefront on Your Domain", "On-Site Workflow Integration", "Mechanic Camera Training"].map((feat) => (
                   <li key={feat} className="flex gap-3 items-center text-[11px] font-bold uppercase tracking-wider text-white">
                     <div className="w-1.5 h-1.5 bg-[#0055FF]" />
@@ -229,21 +244,28 @@ export default function MarketingPage() {
                 ))}
               </ul>
             </div>
-            <button className="w-full bg-[#0055FF] text-white py-5 text-xs font-black uppercase tracking-[0.2em] hover:brightness-110 transition-all shadow-[8px_8px_0px_0px_rgba(0,85,255,0.1)]">
+            <button className="w-full bg-[#0055FF] text-white py-5 text-xs font-black uppercase tracking-[0.2em] hover:brightness-110 transition-all shadow-[8px_8px_0px_0px_rgba(0,85,255,0.1)] text-white">
               Request Enterprise Build
             </button>
           </motion.div>
         </div>
       </section>
 
-      {/* Industrial Quote / Bottom CTA */}
-      <section className="p-8 md:p-24 text-center border-t-2 border-zinc-800">
-        <h2 className="text-4xl md:text-6xl font-black uppercase italic tracking-tighter mb-12">
-          Ready to Deploy?
-        </h2>
-        <button className="bg-[#0055FF] text-white px-16 py-6 text-sm font-black uppercase tracking-[0.3em] hover:brightness-110 transition-all shadow-[8px_8px_0px_0px_rgba(0,85,255,0.2)]">
-          Schedule Infrastructure Audit
-        </button>
+      {/* Footer CTA Section */}
+      <section className="p-8 md:p-32 text-center border-t-2 border-zinc-800 bg-[#09090b]">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5 }}
+          viewport={{ once: true }}
+        >
+          <h2 className="text-5xl md:text-8xl font-black uppercase italic tracking-tighter mb-16 text-white">
+            Ready to Deploy?
+          </h2>
+          <button className="bg-[#0055FF] text-white px-20 py-8 text-lg font-black uppercase tracking-[0.4em] hover:brightness-110 transition-all shadow-[12px_12px_0px_0px_rgba(0,85,255,0.2)] hover:-translate-y-1 active:translate-y-0 text-white">
+            BOOK DEMO
+          </button>
+        </motion.div>
       </section>
 
       {/* Footer */}

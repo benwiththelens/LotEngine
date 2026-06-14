@@ -40,11 +40,8 @@ export default function MarketingPage() {
       {/* Navigation */}
       <nav className="border-b border-zinc-800 bg-[#09090b]/80 backdrop-blur-md sticky top-0 z-50 p-6 flex justify-between items-center">
         <div className="flex items-center gap-4">
-            <div className="relative w-8 h-8 flex items-center justify-center">
-                <span className="absolute left-[10%] bottom-[10%] text-white font-black text-2xl italic z-10 leading-none">L</span>
-                <div className="absolute right-[20%] top-[25%] w-[25%] h-[50%] bg-[#0055FF]" />
-            </div>
-            <span className="font-black uppercase tracking-tighter text-xl italic">LotEngine</span>
+            <img src="/logo.png" alt="LotEngine Logo" className="w-8 h-8 object-contain" />
+            <span className="font-black uppercase tracking-tighter text-xl italic text-white">LotEngine</span>
         </div>
         <div className="hidden md:flex gap-8 text-[10px] font-bold uppercase tracking-[0.3em] text-zinc-500">
             <a href="#pillars" className="hover:text-white transition-colors">Architecture</a>

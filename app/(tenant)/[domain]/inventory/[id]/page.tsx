@@ -73,7 +73,7 @@ export default async function VehicleDetail({ params }: { params: Promise<{ id: 
               <p className="text-xl font-bold uppercase opacity-40 italic tracking-tight">{vehicle.trim}</p>
             </div>
 
-            <div className="bg-black text-white p-8 mb-12 shadow-[12px_12px_0px_0px_rgba(227,66,52,1)]">
+            <div className="bg-black text-white p-8 mb-12 shadow-[12px_12px_0px_0px] shadow-brand-primary">
               <div className="flex justify-between items-end">
                 <div>
                   <p className="text-[10px] font-black uppercase tracking-widest opacity-50 mb-1">Asking Price</p>

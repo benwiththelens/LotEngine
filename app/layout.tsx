@@ -65,14 +65,26 @@ export default async function RootLayout({
     .eq("domain", host)
     .single();
 
+  // If no specific tenant match is found for the host, 
+  // check if we are on localhost or demo, and use Cobalt Blue as the platform default.
+  // Otherwise, fallback to the first tenant as a failsafe.
   if (!tenant) {
-    const { data: fallback } = await supabase.from("tenants").select("*").limit(1).single();
-    tenant = fallback;
+    const isPlatformDomain = host.includes('localhost') || host.includes('lot-engine.com');
+    
+    if (isPlatformDomain) {
+      tenant = {
+        color_primary: "#0047AB",
+        color_background: "#FFFFFF"
+      } as any;
+    } else {
+      const { data: fallback } = await supabase.from("tenants").select("*").limit(1).single();
+      tenant = fallback;
+    }
   }
 
   // Inject theme variables from the database
   const themeStyles = {
-    "--theme-primary": tenant?.color_primary || "#E34234",
+    "--theme-primary": tenant?.color_primary || "#0047AB",
     "--theme-bg": tenant?.color_background || "#FFFFFF",
   } as React.CSSProperties;
 

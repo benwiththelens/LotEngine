@@ -2,6 +2,28 @@
 
 All notable changes to the LotEngine project will be documented in this file.
 
+## [0.4.0] - 2026-06-14
+
+### Added
+- **Dynamic Tenant Branding:** Implemented CSS variable injection (`--theme-primary`) to support custom dealership brand colors across the platform. Fallbacks to Cobalt Blue (`#0047AB`).
+- **Offline Photo Engine:** Built a robust IndexedDB wrapper to queue vehicle images locally when deep in the lot with zero connectivity.
+- **Background Sync Engine:** Added a sequential, fault-tolerant background upload utility to transmit queued photos to Supabase Storage once connectivity is restored.
+- **Guided Capture Terminal:** Implemented a mobile-first, high-density photography module supporting 5-shot Intake and 18-shot Retail protocols.
+- **Auto-Advance Workflow:** The Capture Terminal now automatically expands and smooth-scrolls to the next required shot immediately after an image is taken.
+
+### Fixed
+- **Hydration Mismatches:** Refactored `AdminLayout` into explicit Server and Client components to ensure `hostname` dependent rendering executes consistently across SSR and CSR.
+- **Persistent Red CSS Issues:** Resolved a Tailwind compilation quirk by splitting dynamic CSS variable shadows into standard offset utilities paired with a configured `shadow-brand-primary` color class.
+- **Schema Alignment:** Synchronized the `00_init_schema.sql` file to include the `checklists` column and the new kanban `service_order_status` enums.
+- **Inventory Payload Errors:** Updated the payload sanitizer to correctly strip out `age` and `audit` UI computed fields before hitting the database.
+
+### Changed
+- **Unified Labor Tracking:** Merged the visual timer readout and the manual labor input field in the Service Terminal into a single source of truth.
+- **Terminal Headers:** Removed redundant sync status labels from terminal headers in favor of a prominent "Asset Identifier" (VIN) display.
+- **Brand Identity Swap:** Shifted the platform's default fallback identity from industrial red to Cobalt Blue (`#0047AB`).
+
+---
+
 ## [0.3.0] - 2026-06-13
 
 ### Added

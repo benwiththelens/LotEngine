@@ -5,6 +5,7 @@ import { decodeVin } from "@/lib/vin-service";
 import { lookupPlate } from "@/lib/plate-service";
 import { supabase } from "@/lib/supabase";
 import { usePathname } from "next/navigation";
+import { queueOfflineAction, processOfflineQueue } from "@/lib/sync-engine";
 
 const COMMON_FEATURES = ["Leather", "Sunroof", "Navigation", "Bluetooth", "Backup Camera", "Heated Seats", "3rd Row", "Towing Pkg", "Apple CarPlay", "Premium Sound"];
 const DRIVETRAINS = ["FWD", "RWD", "AWD", "4x4", "4x2"];
@@ -70,16 +71,6 @@ export default function VehicleInventory({ params }: { params: Promise<{ domain:
   const [syncStatus, setSyncStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [isOnline, setIsOnline] = useState(() => typeof window !== 'undefined' ? window.navigator.onLine : true);
 
-  const getLink = (path: string) => {
-    if (typeof window === 'undefined') return path;
-    const hostname = window.location.hostname;
-    const isMarketingDomain = hostname === 'localhost' || hostname === 'lot-engine.com' || hostname === 'www.lot-engine.com';
-    
-    if (!isMarketingDomain) return path;
-    // Prepend domain for subpath routing on shared domains
-    return `/${host}${path === '/' ? '' : path}`;
-  };
-
   const [formData, setFormData] = useState<Partial<Vehicle>>({
     vin: "", year: "", make: "", model: "", trim: "", engine: "", drivetrain: "FWD",
     fuel_type: "Gasoline", ev_range: "", ev_battery: "", condition: "Good", features: [],
@@ -112,21 +103,16 @@ export default function VehicleInventory({ params }: { params: Promise<{ domain:
     if (data) setInventory(data as Vehicle[]);
   }, [host]);
 
-  const processOfflineQueue = useCallback(async () => {
-    const queue = JSON.parse(localStorage.getItem('lotengine_sync_queue') || '[]');
-    if (queue.length === 0) return;
+  const processQueue = useCallback(async () => {
     setSyncStatus('saving');
-    for (const item of queue) {
-      if (item.action === 'update' && item.id) await supabase.from("vehicles").update(item.payload).eq("id", item.id);
-      else if (item.action === 'insert') await supabase.from("vehicles").insert(item.id ? { ...item.payload, id: item.id } : item.payload);
-    }
-    localStorage.removeItem('lotengine_sync_queue');
-    setSyncStatus('saved'); 
-    fetchInventory();
-  }, [fetchInventory]);
+    await processOfflineQueue(() => {
+        setSyncStatus('saved');
+        refreshInventoryQuietly();
+    });
+  }, [refreshInventoryQuietly]);
 
   useEffect(() => {
-    const hO = () => { setIsOnline(true); processOfflineQueue(); };
+    const hO = () => { setIsOnline(true); processQueue(); };
     const hOff = () => setIsOnline(false);
     window.addEventListener('online', hO); 
     window.addEventListener('offline', hOff);
@@ -140,7 +126,7 @@ export default function VehicleInventory({ params }: { params: Promise<{ domain:
       window.removeEventListener('online', hO);
       window.removeEventListener('offline', hOff);
     };
-  }, [fetchInventory, processOfflineQueue]);
+  }, [fetchInventory, processQueue]);
 
   const [now] = useState(() => Date.now());
 
@@ -166,15 +152,15 @@ export default function VehicleInventory({ params }: { params: Promise<{ domain:
     delete p.state; 
     delete p.initiate_recon; 
     delete p.id;
+    delete (p as any).age;
+    delete (p as any).audit;
     
     if (p.vin) p.vin = p.vin.toUpperCase();
     return p;
   };
 
-  const queueOfflineAction = (action: 'insert' | 'update', payload: Partial<Vehicle>, id: string | null) => {
-    const queue = JSON.parse(localStorage.getItem('lotengine_sync_queue') || '[]');
-    queue.push({ action, payload, id, ts: Date.now() });
-    localStorage.setItem('lotengine_sync_queue', JSON.stringify(queue));
+  const queueAction = (action: 'insert' | 'update', payload: Partial<Vehicle>, id: string | null) => {
+    queueOfflineAction(action, payload, id, 'vehicles');
     setSyncStatus('saved');
   };
 
@@ -183,7 +169,7 @@ export default function VehicleInventory({ params }: { params: Promise<{ domain:
     const handler = setTimeout(async () => {
       setSyncStatus('saving');
       const payload = sanitizePayload(formData);
-      if (!isOnline) { queueOfflineAction('update', payload, terminal.id); return; }
+      if (!isOnline) { queueAction('update', payload, terminal.id); return; }
       const { error } = await supabase.from("vehicles").update(payload).eq("id", terminal.id);
       if (error) setSyncStatus('error');
       else { setSyncStatus('saved'); refreshInventoryQuietly(); }
@@ -379,7 +365,7 @@ export default function VehicleInventory({ params }: { params: Promise<{ domain:
       </main>
       {terminal.isOpen && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-[4px] z-[100] flex items-center justify-center p-4 text-black">
-          <div className="bg-white border-4 border-black w-full max-w-5xl max-h-[95vh] overflow-hidden flex flex-col shadow-[32px_32px_0px_0px_rgba(227,66,52,1)]">
+          <div className="bg-white border-4 border-black w-full max-w-5xl max-h-[95vh] overflow-hidden flex flex-col shadow-[32px_32px_0px_0px] shadow-brand-primary">
             <header className="shrink-0 bg-white border-b-4 border-black p-4 md:p-8 flex justify-between items-center z-50 text-black">
               <div>
                 <div className="flex items-center gap-4 mb-1">
@@ -448,7 +434,7 @@ export default function VehicleInventory({ params }: { params: Promise<{ domain:
                   </div>
                 ) : (
                     <div className="max-w-xl mx-auto py-20 animate-in zoom-in-95 duration-500 text-center text-black">
-                        <div className="w-24 h-24 bg-black text-white rounded-full flex items-center justify-center mx-auto mb-10 shadow-[8px_8px_0px_0px_rgba(227,66,52,1)] text-white"><svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg></div>
+                        <div className="w-24 h-24 bg-black text-white rounded-full flex items-center justify-center mx-auto mb-10 shadow-[8px_8px_0px_0px] shadow-brand-primary text-white"><svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg></div>
                         <h3 className="text-5xl font-black uppercase italic tracking-tighter mb-12 text-black">Asset Synced</h3>
                         <div className="bg-zinc-50 border-4 border-black p-8 text-left space-y-6 mb-12 shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] text-black">
                             <div className="flex justify-between border-b pb-2 text-black"><p className="text-[10px] font-black opacity-40 uppercase text-black">Identity</p><p className="font-black uppercase text-black">{formData.year} {formData.make} {formData.model}</p></div>

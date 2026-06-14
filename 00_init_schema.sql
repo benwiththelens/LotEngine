@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS tenants (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     domain TEXT UNIQUE NOT NULL,
     business_name TEXT NOT NULL,
-    color_primary TEXT DEFAULT '#E34234',
+    color_primary TEXT DEFAULT '#0047AB',
     color_background TEXT DEFAULT '#FFFFFF',
     logo_url TEXT,
     created_at TIMESTAMPTZ DEFAULT now()

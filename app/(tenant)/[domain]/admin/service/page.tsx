@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
+import { useState, useEffect, use, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { Maximize2, Plus, CheckCircle2, Circle, Clock, Camera, MessageSquare, ArrowRight } from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
+import { queueOfflineAction, processOfflineQueue } from "@/lib/sync-engine";
 import {
   DndContext,
   closestCorners,
@@ -50,11 +51,11 @@ interface ServiceOrder {
 }
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; border: string }> = {
-  intake: { label: "Intake", color: "#64748b", bg: "bg-gray-100", border: "border-gray-300" },
-  diagnostics: { label: "Diagnostics", color: "#3b82f6", bg: "bg-blue-100", border: "border-blue-300" },
-  parts_hold: { label: "Awaiting Parts", color: "#f59e0b", bg: "bg-yellow-100", border: "border-yellow-300" },
-  in_progress: { label: "In Progress", color: "#8b5cf6", bg: "bg-purple-100", border: "border-purple-300" },
-  ready: { label: "Ready", color: "#10b981", bg: "bg-green-100", border: "border-green-300" },
+  intake: { label: "Intake", color: "#64748b", bg: "bg-zinc-200", border: "border-zinc-400" },
+  diagnostics: { label: "Diagnostics", color: "#3b82f6", bg: "bg-slate-200", border: "border-slate-400" },
+  parts_hold: { label: "Awaiting Parts", color: "#f59e0b", bg: "bg-orange-100", border: "border-orange-300" },
+  in_progress: { label: "In Progress", color: "#8b5cf6", bg: "bg-stone-200", border: "border-stone-400" },
+  ready: { label: "Ready", color: "#10b981", bg: "bg-emerald-100", border: "border-emerald-300" },
 };
 
 const KANBAN_ORDER = ['intake', 'diagnostics', 'parts_hold', 'in_progress', 'ready'];
@@ -111,7 +112,7 @@ function SortableCard({ order, isOverlay = false, onExpand }: { order: ServiceOr
   };
 
   const cardClasses = `bg-white border-2 border-black border-l-4 ${priorityColors[order.priority] || 'border-l-zinc-300'} p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] group cursor-grab active:cursor-grabbing transition-all hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] ${
-    isOverlay ? 'shadow-[16px_16px_0px_0px_rgba(227,66,52,0.2)] rotate-2 scale-105 ring-4 ring-brand-primary' : ''
+    isOverlay ? 'shadow-[16px_16px_0px_0px_color-mix(in srgb, var(--theme-primary) 20%, transparent)] rotate-2 scale-105 ring-4 ring-brand-primary' : ''
   }`;
 
   return (
@@ -159,23 +160,69 @@ function SortableCard({ order, isOverlay = false, onExpand }: { order: ServiceOr
 function TerminalOverlay({ 
   order, 
   onClose,
-  onUpdate
+  onUpdate,
+  isOnline,
+  syncStatus
 }: { 
   order: ServiceOrder; 
   onClose: () => void;
   onUpdate: (order: ServiceOrder) => void;
+  isOnline: boolean;
+  syncStatus: string;
 }) {
   const [checklists, setChecklists] = useState(order.checklists || []);
   const [newStep, setNewStep] = useState("");
   const [notes, setNotes] = useState(order.technician_notes || "");
   const [partsCost, setPartsCost] = useState(order.parts_cost?.toString() || "0");
   const [laborHours, setLaborHours] = useState(order.labor_hours?.toString() || "0");
+  const [timerActive, setTimerActive] = useState(false);
+  const [elapsedTime, setElapsedTime] = useState(0); // in seconds
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (timerActive) {
+      interval = setInterval(() => {
+        setElapsedTime(prev => prev + 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [timerActive]);
+
+  const formatTime = (seconds: number) => {
+    const hrs = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const logTimerToLabor = async () => {
+    const additionalHours = elapsedTime / 3600;
+    const currentHours = parseFloat(laborHours) || 0;
+    const newTotal = (currentHours + additionalHours).toFixed(2);
+    setLaborHours(newTotal);
+    setElapsedTime(0);
+    setTimerActive(false);
+    // This triggers the update to database via the same logic as manual input
+    await updateOrderData({ labor_hours: parseFloat(newTotal) });
+  };
+
+  const cyclePriority = async () => {
+    const priorities: ServiceOrder['priority'][] = ['standard', 'high', 'critical', 'low'];
+    const nextIdx = (priorities.indexOf(order.priority) + 1) % priorities.length;
+    await updateOrderData({ priority: priorities[nextIdx] });
+  };
 
   const updateOrderData = async (updates: Partial<ServiceOrder>) => {
+    // Optimistic UI update
+    onUpdate({ ...order, ...updates });
+
+    if (!isOnline) {
+      queueOfflineAction('update', updates, order.id, 'service_orders');
+      return;
+    }
+
     const { error } = await supabase.from("service_orders").update(updates).eq("id", order.id);
-    if (!error) {
-      onUpdate({ ...order, ...updates });
-    } else {
+    if (error) {
       alert("Failed to update: " + error.message);
     }
   };
@@ -205,39 +252,42 @@ function TerminalOverlay({
     <div className="fixed inset-0 bg-black/80 backdrop-blur-[4px] z-[100] flex items-center justify-center p-0 md:p-8">
       <div className="bg-white md:border-4 border-black w-full h-full max-w-7xl flex flex-col shadow-none md:shadow-[32px_32px_0px_0px_rgba(0,0,0,1)] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         {/* Terminal Header */}
-        <header className="p-4 md:p-8 border-b-4 border-black flex justify-between items-center bg-zinc-50 shrink-0 text-black">
-          <div className="flex items-center gap-4 md:gap-8">
+        <header className="p-4 md:p-6 border-b-4 border-black flex justify-between items-center bg-zinc-50 shrink-0 text-black">
+          <div className="flex items-center gap-4 md:gap-6">
             <button 
               onClick={onClose}
-              className="group flex items-center gap-2 hover:text-brand-primary transition-colors"
+              title="Close Terminal"
+              className="group flex items-center justify-center w-12 h-12 md:w-16 md:h-16 bg-black text-white border-2 border-black shadow-[4px_4px_0px_0px] shadow-brand-primary hover:bg-brand-primary hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
             >
-              <span className="text-2xl md:text-4xl font-black">←</span>
-              <span className="font-black uppercase tracking-widest text-[8px] md:text-xs">Exit Terminal</span>
+              <span className="text-2xl md:text-3xl font-black">×</span>
             </button>
             
-            <div className="h-10 md:h-12 w-1 bg-black/10" />
+            <div className="h-10 md:h-12 w-1 bg-black/10 hidden xs:block" />
             
             <div>
               <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-3 mb-1">
-                <h2 className="text-xl md:text-3xl font-black uppercase italic tracking-tighter leading-none">
+                <h2 className="text-xl md:text-2xl font-black uppercase italic tracking-tighter leading-none">
                   {order.vehicles ? `${order.vehicles.year} ${order.vehicles.make} ${order.vehicles.model}` : 'Unlinked Asset'}
                 </h2>
                 {/* Priority Badge */}
-                <div className={`w-fit px-2 md:px-3 py-0.5 md:py-1 text-[8px] md:text-[10px] font-black uppercase tracking-widest border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] ${
+                <button 
+                  onClick={cyclePriority}
+                  title="Cycle Priority"
+                  className={`w-fit px-2 md:px-3 py-0.5 md:py-1 text-[8px] md:text-[10px] font-black uppercase tracking-widest border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none hover:brightness-110 transition-all ${
                   order.priority === 'critical' ? 'bg-red-500 text-white' :
                   order.priority === 'high' ? 'bg-yellow-500 text-black' :
                   order.priority === 'standard' ? 'bg-green-500 text-white' :
                   'bg-blue-500 text-white'
                 }`}>
                   {order.priority}
-                </div>
+                </button>
               </div>
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-                <p className="font-mono text-[10px] md:text-sm font-bold opacity-60 uppercase">CUSTOMER: {order.customer_name}</p>
+                <p className="font-mono text-[10px] md:text-xs font-bold opacity-60 uppercase tracking-tight">CUSTOMER: {order.customer_name}</p>
                 {order.requested_completion && (
                   <div className="flex items-center gap-2">
                     <div className="w-1.5 h-1.5 rounded-full bg-brand-primary animate-pulse" />
-                    <p className="font-mono text-[10px] md:text-sm font-bold text-brand-primary uppercase">ETA: {new Date(order.requested_completion).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}</p>
+                    <p className="font-mono text-[10px] md:text-xs font-bold text-brand-primary uppercase">ETA: {new Date(order.requested_completion).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}</p>
                   </div>
                 )}
               </div>
@@ -245,9 +295,15 @@ function TerminalOverlay({
           </div>
           
           <div className="hidden sm:flex items-center gap-6 text-right">
+            {elapsedTime > 0 && (
+                <div className="bg-black text-white px-4 py-2 border-2 border-white shadow-[4px_4px_0px_0px] shadow-brand-primary animate-in slide-in-from-right-4">
+                    <p className="text-[8px] font-black uppercase opacity-50 text-white">Active Session</p>
+                    <p className="font-mono text-xl font-black text-white">{formatTime(elapsedTime)}</p>
+                </div>
+            )}
             <div>
-                <p className="text-[10px] font-black uppercase opacity-40 leading-none mb-1">Terminal Status</p>
-                <p className="font-mono text-sm font-black uppercase">Active Connection // {STATUS_CONFIG[order.status]?.label.toUpperCase()}</p>
+                <p className="text-[10px] font-black uppercase opacity-40 leading-none mb-1 text-black">Asset Identifier</p>
+                <p className="font-mono text-sm font-black uppercase text-black">{order.vehicles?.vin || `ID: ${order.id.slice(0, 8)}`}</p>
             </div>
           </div>
         </header>
@@ -262,21 +318,25 @@ function TerminalOverlay({
                const isPast = index <= currentIndex;
                
                return (
-                 <div key={statusId} className="flex flex-col items-center gap-1 md:gap-2 bg-white px-2 md:px-4">
+                 <button 
+                   key={statusId} 
+                   onClick={() => !isActive && updateOrderData({ status: statusId })}
+                   className="flex flex-col items-center gap-1 md:gap-2 bg-white px-2 md:px-4 group outline-none"
+                 >
                    <div className={`w-6 h-6 md:w-8 md:h-8 border-2 md:border-4 flex items-center justify-center transition-all duration-300 ${
                      isActive ? 'border-brand-primary bg-brand-primary text-white scale-110 md:scale-125 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.2)]' :
-                     isPast ? 'border-black bg-black text-white' :
-                     'border-zinc-300 bg-zinc-100 text-transparent'
+                     isPast ? 'border-black bg-black text-white group-hover:bg-brand-primary group-hover:border-brand-primary' :
+                     'border-zinc-300 bg-zinc-100 text-transparent group-hover:border-black'
                    }`}>
                      {isPast && !isActive && <CheckCircle2 className="w-3 h-3 md:w-5 md:h-5 text-white" />}
                      {isActive && <div className="w-2 h-2 md:w-3 md:h-3 bg-white animate-pulse" />}
                    </div>
                    <span className={`text-[8px] md:text-[10px] font-black uppercase tracking-widest transition-colors ${
                      isActive ? 'text-brand-primary' :
-                     isPast ? 'text-black' :
-                     'text-zinc-400'
+                     isPast ? 'text-black group-hover:text-brand-primary' :
+                     'text-zinc-400 group-hover:text-black'
                    }`}>{config.label}</span>
-                 </div>
+                 </button>
                )
              })}
           </div>
@@ -321,7 +381,7 @@ function TerminalOverlay({
                             value={newStep}
                             onChange={(e) => setNewStep(e.target.value)}
                             placeholder="ADD PROCEDURE..."
-                            className="flex-1 border-2 border-black p-3 md:p-4 font-mono text-xs md:text-sm font-bold uppercase outline-none focus:border-brand-primary focus:shadow-[4px_4px_0px_0px_rgba(227,66,52,0.2)] transition-all text-black"
+                            className="flex-1 border-2 border-black p-3 md:p-4 font-mono text-xs md:text-sm font-bold uppercase outline-none focus:border-brand-primary focus:shadow-[4px_4px_0px_0px_color-mix(in srgb, var(--theme-primary) 20%, transparent)] transition-all text-black"
                         />
                         <button type="submit" className="bg-black text-white px-6 md:px-8 py-3 md:py-4 hover:bg-brand-primary transition-colors flex items-center justify-center shadow-[4px_4px_0px_0px_rgba(0,0,0,0.2)] active:shadow-none active:translate-x-0.5 active:translate-y-0.5">
                             <Plus className="w-5 h-5 md:w-6 md:h-6 text-white" />
@@ -337,7 +397,7 @@ function TerminalOverlay({
                             type="number"
                             min="0"
                             step="0.01"
-                            className="w-full border-2 border-black p-3 md:p-4 font-mono font-black text-lg md:text-xl outline-none focus:border-brand-primary focus:shadow-[4px_4px_0px_0px_rgba(227,66,52,0.2)] transition-all text-black" 
+                            className="w-full border-2 border-black p-3 md:p-4 font-mono font-black text-lg md:text-xl outline-none focus:border-brand-primary focus:shadow-[4px_4px_0px_0px_color-mix(in srgb, var(--theme-primary) 20%, transparent)] transition-all text-black" 
                             value={partsCost}
                             onChange={(e) => setPartsCost(e.target.value)}
                             onFocus={(e) => e.target.select()}
@@ -350,7 +410,7 @@ function TerminalOverlay({
                             type="number"
                             min="0"
                             step="0.1"
-                            className="w-full border-2 border-black p-3 md:p-4 font-mono font-black text-lg md:text-xl outline-none focus:border-brand-primary focus:shadow-[4px_4px_0px_0px_rgba(227,66,52,0.2)] transition-all text-black" 
+                            className="w-full border-2 border-black p-3 md:p-4 font-mono font-black text-lg md:text-xl outline-none focus:border-brand-primary focus:shadow-[4px_4px_0px_0px_color-mix(in srgb, var(--theme-primary) 20%, transparent)] transition-all text-black" 
                             value={laborHours}
                             onChange={(e) => setLaborHours(e.target.value)}
                             onFocus={(e) => e.target.select()}
@@ -362,18 +422,36 @@ function TerminalOverlay({
             
             <div className="flex-1 flex flex-col gap-6 md:gap-8 text-black">
                 {/* Quick Actions */}
-                <div className="grid grid-cols-3 gap-3 md:gap-4">
-                    <button type="button" className="bg-white border-2 border-black p-3 md:p-4 flex flex-col items-center justify-center gap-1 md:gap-2 hover:bg-black hover:text-white transition-colors shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none group text-black">
-                        <Clock className="w-5 h-5 md:w-6 md:h-6 group-hover:animate-pulse" />
-                        <span className="text-[8px] md:text-[10px] font-black uppercase tracking-widest">Timer</span>
-                    </button>
-                    <button type="button" className="bg-white border-2 border-black p-3 md:p-4 flex flex-col items-center justify-center gap-1 md:gap-2 hover:bg-black hover:text-white transition-colors shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none group text-black">
+                <div className="grid grid-cols-2 gap-3 md:gap-4">
+                    <div className="flex flex-col gap-2">
+                        <button 
+                            type="button" 
+                            onClick={() => setTimerActive(!timerActive)}
+                            className={`w-full border-2 border-black p-3 md:p-4 flex flex-col items-center justify-center gap-1 md:gap-2 transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none group ${timerActive ? 'bg-red-500 text-white border-white animate-pulse' : 'bg-white text-black hover:bg-black hover:text-white'}`}
+                        >
+                            <Clock className={`w-5 h-5 md:w-6 md:h-6 ${timerActive ? 'text-white' : 'group-hover:animate-pulse'}`} />
+                            <span className="text-[8px] md:text-[10px] font-black uppercase tracking-widest">{timerActive ? 'STOP' : 'START'} TIMER</span>
+                        </button>
+                        {elapsedTime > 0 && (
+                            <div className="flex gap-1 animate-in fade-in zoom-in-95">
+                                <button 
+                                    onClick={logTimerToLabor}
+                                    className="flex-1 bg-green-500 text-white text-[8px] font-black p-1 uppercase border border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:brightness-110 active:translate-x-0.5 active:translate-y-0.5 active:shadow-none text-white"
+                                >
+                                    Log
+                                </button>
+                                <button 
+                                    onClick={() => { setElapsedTime(0); setTimerActive(false); }}
+                                    className="bg-zinc-200 text-black text-[8px] font-black p-1 uppercase border border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:bg-zinc-300 active:translate-x-0.5 active:translate-y-0.5 active:shadow-none"
+                                >
+                                    Reset
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                    <button type="button" className="h-full bg-white border-2 border-black p-3 md:p-4 flex flex-col items-center justify-center gap-1 md:gap-2 hover:bg-black hover:text-white transition-colors shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none group text-black">
                         <Camera className="w-5 h-5 md:w-6 md:h-6 group-hover:scale-110 transition-transform" />
                         <span className="text-[8px] md:text-[10px] font-black uppercase tracking-widest">Photo</span>
-                    </button>
-                    <button type="button" className="bg-white border-2 border-black p-3 md:p-4 flex flex-col items-center justify-center gap-1 md:gap-2 hover:bg-black hover:text-white transition-colors shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none group text-black">
-                        <MessageSquare className="w-5 h-5 md:w-6 md:h-6 group-hover:-translate-y-0.5 transition-transform" />
-                        <span className="text-[8px] md:text-[10px] font-black uppercase tracking-widest">Note</span>
                     </button>
                 </div>
 
@@ -394,8 +472,18 @@ function TerminalOverlay({
         {/* Smart Footer */}
         <footer className="p-4 md:p-6 border-t-4 border-black bg-white flex justify-between items-center shrink-0 text-black">
             <div className="flex items-center gap-2 md:gap-4">
-                <div className="w-2 md:w-3 h-2 md:h-3 rounded-full bg-brand-primary animate-pulse" />
-                <span className="font-mono text-[8px] md:text-[10px] font-black uppercase tracking-widest opacity-50 text-black">Terminal Active</span>
+                <div className={`w-2 md:w-3 h-2 md:h-3 rounded-full transition-colors duration-300 ${
+                    !isOnline ? 'bg-brand-primary animate-pulse' :
+                    syncStatus === 'saving' ? 'bg-yellow-400 animate-pulse' :
+                    syncStatus === 'error' ? 'bg-red-600' :
+                    'bg-green-500'
+                }`} />
+                <span className="font-mono text-[8px] md:text-[10px] font-black uppercase tracking-widest opacity-50 text-black">
+                    {!isOnline ? 'OFFLINE QUEUE' :
+                     syncStatus === 'saving' ? 'SYNCING TO CLOUD' :
+                     syncStatus === 'error' ? 'SYNC ERROR' :
+                     'CLOUD DATABASE SYNCED'}
+                </span>
             </div>
             
             {currentIndex < KANBAN_ORDER.length - 1 ? (
@@ -431,17 +519,29 @@ export default function ServiceBay({ params }: { params: Promise<{ domain: strin
   const [activeId, setActiveId] = useState<string | null>(null);
   const [showIntake, setShowIntake] = useState(false);
   const [terminal, setTerminal] = useState<{ isOpen: boolean; order: ServiceOrder | null }>({ isOpen: false, order: null });
+  const [isOnline, setIsOnline] = useState(() => typeof window !== 'undefined' ? window.navigator.onLine : true);
+  const [syncStatus, setSyncStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
 
-  const getLink = (path: string) => {
-    if (typeof window === 'undefined') return path;
-    const hostname = window.location.hostname;
-    const isMarketingDomain = hostname === 'localhost' || hostname === 'lot-engine.com' || hostname === 'www.lot-engine.com';
+  const processQueue = useCallback(async () => {
+    setSyncStatus('saving');
+    await processOfflineQueue(() => {
+        setSyncStatus('saved');
+        fetchOrders();
+    });
+  }, [host]); // fetchOrders is defined later but it's okay because of hoisting or if I move it.
+
+  useEffect(() => {
+    const hO = () => { setIsOnline(true); processQueue(); };
+    const hOff = () => setIsOnline(false);
+    window.addEventListener('online', hO); 
+    window.addEventListener('offline', hOff);
     
-    if (!isMarketingDomain) return path;
-    // Prepend domain for subpath routing on shared domains
-    return `/${host}${path === '/' ? '' : path}`;
-  };
-  
+    return () => {
+      window.removeEventListener('online', hO);
+      window.removeEventListener('offline', hOff);
+    };
+  }, [processQueue]);
+
   const [customerName, setCustomerName] = useState("");
   const [vehicleVin, setVehicleVin] = useState("");
 
@@ -449,12 +549,6 @@ export default function ServiceBay({ params }: { params: Promise<{ domain: strin
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
-
-  useEffect(() => {
-    fetchOrders();
-    const channel = supabase.channel("service_orders_shop").on("postgres_changes", { event: "*", schema: "public", table: "service_orders" }, () => fetchOrders()).subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [host]);
 
   async function fetchOrders() {
     let { data: tenant } = await supabase.from("tenants").select("id").eq("domain", host).single();
@@ -467,6 +561,12 @@ export default function ServiceBay({ params }: { params: Promise<{ domain: strin
       if (data) setOrders(data as ServiceOrder[]);
     }
   }
+
+  useEffect(() => {
+    fetchOrders();
+    const channel = supabase.channel("service_orders_shop").on("postgres_changes", { event: "*", schema: "public", table: "service_orders" }, () => fetchOrders()).subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [host]);
 
   const handleDragStart = (e: DragStartEvent) => setActiveId(e.active.id as string);
 
@@ -496,6 +596,16 @@ export default function ServiceBay({ params }: { params: Promise<{ domain: strin
     const activeOrder = orders.find(o => o.id === active.id);
     if (!activeOrder) return;
     const newStatus = STATUS_CONFIG[over.id as string] ? (over.id as string) : (orders.find(o => o.id === over.id)?.status || activeOrder.status);
+
+    if (activeOrder.status === newStatus) return;
+
+    // Optimistic UI update
+    setOrders(prev => prev.map(o => o.id === active.id ? { ...o, status: newStatus } : o));
+
+    if (!isOnline) {
+      queueOfflineAction('update', { status: newStatus }, active.id as string, 'service_orders');
+      return;
+    }
 
     const { error } = await supabase.from("service_orders").update({ status: newStatus }).eq("id", active.id);
     if (error) { alert(error.message); fetchOrders(); }
@@ -563,12 +673,14 @@ export default function ServiceBay({ params }: { params: Promise<{ domain: strin
             setTerminal({ isOpen: true, order: updatedOrder });
             setOrders(prev => prev.map(o => o.id === updatedOrder.id ? updatedOrder : o));
           }}
+          isOnline={isOnline}
+          syncStatus={syncStatus}
         />
       )}
 
       {showIntake && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-[4px] z-[100] flex items-center justify-center p-4 text-black">
-          <div className="bg-white border-4 border-black w-full max-w-lg p-10 shadow-[20px_20px_0px_0px_rgba(227,66,52,1)]">
+          <div className="bg-white border-4 border-black w-full max-w-lg p-10 shadow-[20px_20px_0px_0px] shadow-brand-primary">
             <div className="flex justify-between items-start mb-8 text-black">
               <div>
                 <p className="text-[10px] font-black uppercase tracking-widest text-brand-primary mb-1 text-brand-primary font-sans">Authorization Pending</p>

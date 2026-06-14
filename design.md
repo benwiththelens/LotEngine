@@ -12,7 +12,7 @@ The system avoids looking like a sleek tech startup. The UI is a heavy-duty gara
 ### Tenant Retail & Dashboards
 * **Background / Dominant:** Pure White (`#FFFFFF`). Maximizes readability for asphalt operations.
 * **Structure:** Solid Black (`#000000`). Maximum contrast for data grids and structural lines.
-* **Accent / Action:** Cinnabar Red (`#E34234`). Used for high-leverage elements: primary buttons, active status tags, and Kanban progression.
+* **Accent / Action:** Cobalt Blue (`#0047AB`). Used for high-leverage elements: primary buttons, active status tags, and Kanban progression.
 
 ## 2. Typography
 * **Headers & Labels:** `Inter (Bold)`. technical, structured sans-serif. Uppercase for vehicle titles.

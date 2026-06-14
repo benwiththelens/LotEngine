@@ -57,6 +57,8 @@ graph TD;
 - **Service Kanban Engine**: An industrial-grade 5-stage workflow for managing repairs on the lot (Intake → Diagnostics → Awaiting Parts → In Progress → Ready).
 - **Inventory Terminal**: A deep-dive management hub for asset capture, VIN decoding, and multi-tenant repository management.
 - **Smart Sync**: Built-in support for offline-first data entry with persistent "SAVED" states.
+- **Offline Photo Engine**: A mobile-first, guided capture terminal that safely queues heavy image payloads in an IndexedDB cache when deep in the lot, automatically syncing to the cloud when connectivity returns.
+- **Dynamic Tenant Branding**: The entire UI seamlessly shifts its industrial tactical aesthetic to match the exact primary brand hex code assigned to the tenant.
 
 ## 📱 Mobile-First Operations
 

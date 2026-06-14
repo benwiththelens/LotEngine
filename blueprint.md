@@ -16,7 +16,7 @@ LotEngine is a lightweight, multi-tenant "Headless Dealership" operating platfor
 * `id` (uuid, primary key)
 * `domain` (text, unique) -> e.g., 'dealer-a.com'
 * `business_name` (text)
-* `color_primary` (text) -> Default: `#E34234` (Red)
+* `color_primary` (text) -> Default: `#0047AB` (Cobalt Blue)
 * `color_background` (text) -> Default: `#FFFFFF` (White)
 * `logo_url` (text)
 * `created_at` (timestamptz)
@@ -88,6 +88,13 @@ LotEngine is a lightweight, multi-tenant "Headless Dealership" operating platfor
 * **Kanban Grid:** Drag-and-drop state management with visual priority coding.
 * **Service Terminal:** Full-screen management hub for interactive checklists and technical note capture.
 * **Smart Sync:** Auto-saving data entry with persistent "SAVED" states and offline-ready queuing.
+
+### The Photography Engine (Offline-First)
+1. Technician opens the mobile Capture Module in `intake` or `retail` mode.
+2. The UI guides them through a strict sequence of 5 or 18 mandatory angles.
+3. Photos are captured using native device hardware (`<input capture="environment">`).
+4. **Offline Queue:** Heavy binary data is stored instantly in IndexedDB using the `photo-queue` wrapper.
+5. **Background Sync:** The `syncEngine` sequential uploader blasts the queue to Supabase Storage once connectivity returns, automatically linking the public URLs to the `vehicle_images` table.
 
 ### The Zero-Tax Syndication Engine
 * **Ad Kit Generator:** Compiles database specs into an emoji-optimized text block.

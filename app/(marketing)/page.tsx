@@ -45,9 +45,9 @@ export default function MarketingPage() {
             <span className="font-black uppercase tracking-tighter text-xl italic text-white">LotEngine</span>
         </div>
         <div className="hidden md:flex gap-8 text-[10px] font-bold uppercase tracking-[0.3em] text-zinc-500">
-            <a href="#pillars" className="hover:text-white transition-colors">Architecture</a>
-            <a href="#demo" className="hover:text-white transition-colors">Operations</a>
-            <a href="#infrastructure" className="hover:text-white transition-colors">Infrastructure</a>
+            <a href="#demo" className="hover:text-white transition-colors">Workflow</a>
+            <a href="#infrastructure" className="hover:text-white transition-colors">Pricing</a>
+            <a href="#deploy" className="hover:text-white transition-colors">Deploy</a>
         </div>
         <Link 
             href="/login"
@@ -132,12 +132,12 @@ export default function MarketingPage() {
         </div>
       </section>
 
-      {/* #demo Section (Operations) */}
+      {/* #demo Section (Workflow) */}
       <section id="demo" className="min-h-screen py-24 px-8 max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-4">
           <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-500 mb-2 text-white">System Operations</p>
-            <h2 className="text-4xl md:text-6xl font-black uppercase italic tracking-tighter leading-none text-white">The Workflow</h2>
+            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-500 mb-2 text-white">System Workflow</p>
+            <h2 className="text-4xl md:text-6xl font-black uppercase italic tracking-tighter leading-none text-white">Operational Engine</h2>
           </div>
         </div>
         
@@ -178,7 +178,7 @@ export default function MarketingPage() {
       <section id="infrastructure" className="min-h-screen py-24 px-8 max-w-7xl mx-auto border-t-2 border-zinc-800">
         <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-4">
           <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-500 mb-2 text-white">Service Protocols</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-500 mb-2 text-white">Pricing Protocols</p>
             <h2 className="text-4xl md:text-6xl font-black uppercase italic tracking-tighter leading-none text-white">Infrastructure Tiers</h2>
           </div>
         </div>
@@ -252,7 +252,7 @@ export default function MarketingPage() {
       </section>
 
       {/* Footer CTA Section */}
-      <section className="p-8 md:p-32 text-center border-t-2 border-zinc-800 bg-[#09090b]">
+      <section id="deploy" className="p-8 md:p-32 text-center border-t-2 border-zinc-800 bg-[#09090b]">
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           whileInView={{ opacity: 1, scale: 1 }}

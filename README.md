@@ -33,7 +33,18 @@ graph TD;
 
 ## 🚀 Core Mechanisms
 
-## 💻 Local Development Setup
+- **Rugged Professionalism Aesthetic**: A high-contrast, flat design system optimized for maximum sunlight readability and industrial performance. (No shadows, sharp 90° corners, pure white/black).
+- **Service Kanban Engine**: An industrial-grade 5-stage workflow for managing repairs on the lot (Intake → Diagnostics → Awaiting Parts → In Progress → Ready).
+- **Inventory Terminal**: A deep-dive management hub for asset capture, VIN decoding, and multi-tenant repository management.
+- **Smart Sync**: Built-in support for offline-first data entry with persistent "SAVED" states.
+
+## 📱 Mobile-First Operations
+
+LotEngine is designed to be used while walking the asphalt. Every admin interface is optimized for thumb-friendly interaction and tablet hybrid layouts.
+- **Admin Layout**: Responsive sidebar that collapses into a bottom navigation bar on phones.
+- **Always-Visible Actions**: Tactical hardware-style buttons for high-performance touch interaction.
+- **Service Terminal**: Full-screen "native app" experience for mechanics on the shop floor.
+
 
 To run LotEngine locally, you need Node.js and a Supabase project.
 

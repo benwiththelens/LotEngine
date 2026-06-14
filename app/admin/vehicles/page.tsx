@@ -12,20 +12,20 @@ const FUEL_TYPES = ["Gasoline", "Diesel", "Electric", "Hybrid", "Plug-in Hybrid"
 interface Vehicle {
   id: string;
   vin: string;
-  year: string | number;
+  year: string | number | null;
   make: string;
   model: string;
   trim: string;
   engine: string;
   drivetrain: string;
   fuel_type: string;
-  ev_range: string | number;
-  ev_battery: string | number;
+  ev_range: string | number | null;
+  ev_battery: string | number | null;
   condition: string;
   features: string[];
-  price: string | number;
-  acquisition_cost: string | number;
-  mileage: string | number;
+  price: string | number | null;
+  acquisition_cost: string | number | null;
+  mileage: string | number | null;
   status: string;
   lot_location: string;
   public_description: string;

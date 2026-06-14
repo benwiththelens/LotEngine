@@ -256,21 +256,21 @@ export default function VehicleInventory() {
 
   return (
     <div className="flex flex-col h-screen bg-zinc-50 overflow-hidden text-black font-sans">
-      <header className="p-4 md:p-8 bg-white border-b-4 border-black flex justify-between items-center z-20 shrink-0 shadow-sm text-black">
-        <div className="flex items-center gap-4 md:gap-10">
+      <header className="p-4 md:p-6 lg:p-8 bg-white border-b-4 border-black flex justify-between items-center z-20 shrink-0 shadow-sm text-black">
+        <div className="flex items-center gap-4 md:gap-6 lg:gap-10">
           <div>
             <p className="text-[10px] font-black uppercase text-brand-primary mb-1">Lot Management</p>
-            <h1 className="text-xl md:text-4xl font-black uppercase italic tracking-tighter leading-none">Unified Inventory</h1>
+            <h1 className="text-xl md:text-2xl lg:text-4xl font-black uppercase italic tracking-tighter leading-none">Unified Inventory</h1>
           </div>
-          <div className="hidden md:flex gap-8 border-l-2 border-black/5 pl-10 text-black">
-            <div><p className="text-[10px] font-black opacity-30 uppercase mb-1 text-black">Units</p><p className="text-xl font-mono font-black italic">{inventory.length}</p></div>
-            <div><p className="text-[10px] font-black opacity-30 uppercase mb-1 text-black">Sales</p><p className="text-xl font-mono font-black italic text-brand-primary">{inventory.filter(v => v.status === 'available').length}</p></div>
-            <div><p className="text-[10px] font-black opacity-30 uppercase mb-1 text-black">Valuation</p><p className="text-xl font-mono font-black italic text-black">${inventory.reduce((a, v) => a + (Number(v.price) || 0), 0).toLocaleString()}</p></div>
+          <div className="hidden md:flex gap-4 lg:gap-8 border-l-2 border-black/5 pl-4 lg:pl-10 text-black">
+            <div><p className="text-[10px] font-black opacity-30 uppercase mb-1 text-black">Units</p><p className="text-lg lg:text-xl font-mono font-black italic">{inventory.length}</p></div>
+            <div><p className="text-[10px] font-black opacity-30 uppercase mb-1 text-black">Sales</p><p className="text-lg lg:text-xl font-mono font-black italic text-brand-primary">{inventory.filter(v => v.status === 'available').length}</p></div>
+            <div><p className="text-[10px] font-black opacity-30 uppercase mb-1 text-black">Valuation</p><p className="text-lg lg:text-xl font-mono font-black italic text-black">${inventory.reduce((a, v) => a + (Number(v.price) || 0), 0).toLocaleString()}</p></div>
           </div>
         </div>
         <div className="flex gap-4">
           {!isOnline && <div className="flex items-center gap-2 border-4 border-yellow-400 p-2 bg-yellow-50 shadow-[4px_4px_0px_0px_rgba(250,204,21,1)] text-black"><span className="animate-ping h-2 w-2 rounded-full bg-yellow-400" /><p className="text-[9px] font-black uppercase">Offline</p></div>}
-          <button onClick={openAddTerminal} className="bg-black text-white px-6 py-3 md:px-10 md:py-4 font-black uppercase text-[10px] md:text-xs border-b-4 border-r-4 border-black/30 shadow-xl hover:bg-brand-primary transition-all">Add <span className="hidden md:inline">New </span>Unit</button>
+          <button onClick={openAddTerminal} className="bg-black text-white px-4 py-2 md:px-6 md:py-3 lg:px-10 lg:py-4 font-black uppercase text-[10px] md:text-xs border-b-4 border-r-4 border-black/30 shadow-xl hover:bg-brand-primary transition-all">Add <span className="hidden lg:inline">New </span>Unit</button>
         </div>
       </header>
 
@@ -309,16 +309,16 @@ export default function VehicleInventory() {
           {/* Desktop Table */}
           <div className="hidden md:block bg-white border-4 border-black overflow-hidden shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] text-black">
             <table className="w-full text-left border-collapse">
-              <thead><tr className="bg-black text-white text-[10px] font-black uppercase tracking-widest"><th className="p-5 text-white">Asset</th><th className="p-5 text-center text-white">Status / Age</th><th className="p-5 text-center text-white text-white">Financials</th><th className="p-5 text-center text-white text-white">Audit</th><th className="p-5 text-right text-white">Terminal</th></tr></thead>
+              <thead><tr className="bg-black text-white text-[10px] font-black uppercase tracking-widest"><th className="p-3 lg:p-5 text-white">Asset</th><th className="p-3 lg:p-5 text-center text-white">Status / Age</th><th className="p-3 lg:p-5 text-center text-white text-white">Financials</th><th className="p-3 lg:p-5 text-center text-white text-white">Audit</th><th className="p-3 lg:p-5 text-right text-white">Terminal</th></tr></thead>
               <tbody className="divide-y-4 divide-zinc-50 text-black">
                 {loading ? <tr><td colSpan={5} className="p-20 text-center animate-pulse uppercase font-black text-black">Syncing...</td></tr> : inventoryWithMetrics.map((v) => {
                   return (
                     <tr key={v.id} className="hover:bg-zinc-50 group transition-colors text-black">
-                      <td className="p-5 text-black"><p className="text-[10px] font-black uppercase text-brand-primary mb-1 tracking-tighter">VIN: {v.vin}</p><h2 className="text-2xl font-black uppercase italic leading-none">{v.year} {v.make}</h2><p className="text-xs font-bold opacity-60 uppercase">{v.model}</p></td>
-                      <td className="p-5 text-center text-black"><div className="flex flex-col items-center gap-1 text-black"><span className={`text-[9px] font-black border-2 border-black px-2 py-0.5 uppercase ${v.status === 'available' ? 'bg-green-400' : 'bg-white'}`}>{v.status}</span><span className={`text-[8px] font-black uppercase px-2 ${v.age > 60 ? 'bg-red-600 text-white animate-pulse' : v.age > 30 ? 'bg-yellow-400' : 'opacity-30'}`}>{v.age === 0 ? "NEW" : `${v.age} DAYS`}</span></div></td>
-                      <td className="p-5 text-center text-black"><p className="font-mono font-black text-xl text-brand-primary leading-none text-brand-primary">${Number(v.price || 0).toLocaleString()}</p><p className="font-mono text-[10px] opacity-40 uppercase mt-1">{v.mileage?.toLocaleString() || "---"} MI</p></td>
-                      <td className="p-5 text-center text-black"><div className="flex flex-wrap justify-center gap-1 text-black">{v.audit.length === 0 ? <span className="text-[8px] font-black text-green-600 border px-1 uppercase">Verified</span> : v.audit.map(f => <span key={f} className="text-[8px] font-black bg-brand-primary text-white px-1 uppercase border border-black">{f}</span>)}</div></td>
-                      <td className="p-5 text-right text-black">
+                      <td className="p-3 lg:p-5 text-black"><p className="text-[10px] font-black uppercase text-brand-primary mb-1 tracking-tighter">VIN: {v.vin}</p><h2 className="text-lg lg:text-2xl font-black uppercase italic leading-none">{v.year} {v.make}</h2><p className="text-[10px] lg:text-xs font-bold opacity-60 uppercase">{v.model}</p></td>
+                      <td className="p-3 lg:p-5 text-center text-black"><div className="flex flex-col items-center gap-1 text-black"><span className={`text-[9px] font-black border-2 border-black px-2 py-0.5 uppercase ${v.status === 'available' ? 'bg-green-400' : 'bg-white'}`}>{v.status}</span><span className={`text-[8px] font-black uppercase px-2 ${v.age > 60 ? 'bg-red-600 text-white animate-pulse' : v.age > 30 ? 'bg-yellow-400' : 'opacity-30'}`}>{v.age === 0 ? "NEW" : `${v.age} DAYS`}</span></div></td>
+                      <td className="p-3 lg:p-5 text-center text-black"><p className="font-mono font-black text-lg lg:text-xl text-brand-primary leading-none text-brand-primary">${Number(v.price || 0).toLocaleString()}</p><p className="font-mono text-[10px] opacity-40 uppercase mt-1">{v.mileage?.toLocaleString() || "---"} MI</p></td>
+                      <td className="p-3 lg:p-5 text-center text-black"><div className="flex flex-wrap justify-center gap-1 text-black">{v.audit.length === 0 ? <span className="text-[8px] font-black text-green-600 border px-1 uppercase">Verified</span> : v.audit.map(f => <span key={f} className="text-[8px] font-black bg-brand-primary text-white px-1 uppercase border border-black">{f}</span>)}</div></td>
+                      <td className="p-3 lg:p-5 text-right text-black">
                           <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity text-black">
                               <button onClick={() => openEditTerminal(v)} className="bg-black text-white p-3 hover:bg-brand-primary border-b-2 border-r-2 border-black/20 text-white shadow-sm"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 fill-white" viewBox="0 0 20 20"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" /></svg></button>
                               <button onClick={() => handleDeleteAsset(v.id)} className="bg-white text-red-600 p-3 border-2 border-black hover:bg-red-50 text-red-600 shadow-sm"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" /></svg></button>

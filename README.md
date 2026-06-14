@@ -2,41 +2,40 @@
 
 LotEngine is a lightweight, headless operating system built for independent automotive dealerships. It abstracts away the bloat and "luxury tax" of legacy dealership software, providing a unified and extensible platform for inventory management, marketing automation, and dealership operations.
 
-It is designed to act as a 1:1 digital twin of the physical asphalt.
-
 ## 🏗️ System Architecture
 
-The platform utilizes a decoupled, headless architecture to maximize mobile performance on the lot and ensure absolute data portability.
+The platform utilizes a **true multi-tenant architecture** with domain-based routing, serving both the global SaaS marketing site and individual dealer showrooms from a single optimized instance.
 
 ```mermaid
 graph TD;
-    subgraph Input Layer [The Lot]
-        M[Mechanic Mobile UI] -->|Guided Camera & Data| S[(Supabase Postgres)]
-        V[VIN Input] -->|Webhook| E[Edge Function]
-        E <-->|Fetch Specs| N(NHTSA API)
-        E -->|Write Specs| S
+    subgraph Multi-Tenant Boundary [Network Edge]
+        P[Dynamic Proxy] -->|lot-engine.com| M[Marketing Site]
+        P -->|dealer-a.com| T[Tenant Showroom A]
+        P -->|dealer-b.com| T2[Tenant Showroom B]
     end
 
-    subgraph Distribution Layer [The Web]
-        S -->|Static Build via API| W[Next.js Front-End]
-        S -->|Ad-Kit Payload| P[Social Syndication / Postiz]
-        S -->|Service Webhooks| B[Brevo Email/SMS]
+    subgraph Operations Layer [The Hub]
+        M -->|SaaS Signup| S[(Supabase Postgres)]
+        T -->|Inventory Sync| S
+        T2 -->|Inventory Sync| S
     end
 ```
 
 ## 🛠️ The Tech Stack
 
-- **Frontend**: Next.js (App Router), React, Tailwind CSS
+- **Frontend**: Next.js 16 (App Router), React 19, Tailwind CSS 4
+- **Animations**: Framer Motion (Industrial-grade UI)
 - **Database & Auth**: Supabase (PostgreSQL)
-- **Hosting (Phase 1)**: Vercel (Edge) + Supabase Cloud
-- **Hosting (Phase 2)**: Self-hosted Docker / Traefik on bare metal
+- **Infrastructure**: Vercel (Edge) with dynamic Proxy routing
 
 ## 🚀 Core Mechanisms
 
+- **Dynamic Multi-Tenancy**: Zero-configuration domain mapping with robust lookup fallbacks for Vercel preview environments.
 - **Rugged Professionalism Aesthetic**: A high-contrast, flat design system optimized for maximum sunlight readability and industrial performance. (No shadows, sharp 90° corners, pure white/black).
 - **Service Kanban Engine**: An industrial-grade 5-stage workflow for managing repairs on the lot (Intake → Diagnostics → Awaiting Parts → In Progress → Ready).
 - **Inventory Terminal**: A deep-dive management hub for asset capture, VIN decoding, and multi-tenant repository management.
 - **Smart Sync**: Built-in support for offline-first data entry with persistent "SAVED" states.
+... Applied fuzzy match at line 1-32.
 
 ## 📱 Mobile-First Operations
 

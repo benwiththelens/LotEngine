@@ -39,7 +39,7 @@ function DemoTerminal() {
 
   if (status === 'success') {
     return (
-      <div className="w-full bg-zinc-900 border border-zinc-800 p-5 flex items-center justify-center min-h-[66px]">
+      <div className="w-full bg-zinc-900 border border-zinc-800 p-6 flex items-center justify-center min-h-[78px]">
         <p className="font-mono text-[10px] text-[#0055FF] font-black uppercase tracking-[0.2em] animate-pulse">
           // REQUEST_RECEIVED: CHECK_YOUR_INBOX_SHORTLY
         </p>
@@ -48,15 +48,16 @@ function DemoTerminal() {
   }
 
   return (
-    <div className="w-full bg-zinc-900 border border-zinc-800 p-5 flex flex-col items-start gap-2">
-      <p className="font-mono text-[9px] text-zinc-500 font-black uppercase tracking-widest">
+    <div className="w-full bg-zinc-900 border border-zinc-800 p-6 flex flex-col items-start gap-3 min-h-[78px] justify-center">
+      <p className="font-mono text-[9px] text-zinc-500 font-black uppercase tracking-widest leading-none">
         // REQUEST_DEMO_ACCESS
       </p>
-      <form onSubmit={handleSubmit} className="w-full flex items-center gap-4">
+      <form onSubmit={handleSubmit} className="w-full flex items-center gap-2">
+        <span className="font-mono text-xs font-black text-[#0055FF]">{'>'}</span>
         <input 
           type="email"
           placeholder="EMAIL ADDRESS"
-          className="flex-1 bg-transparent border-none outline-none font-mono text-xs font-black text-white placeholder:text-zinc-700"
+          className="flex-1 bg-transparent border-none outline-none font-mono text-xs font-black text-white placeholder:text-zinc-700 leading-none py-0 m-0"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           disabled={status === 'loading'}

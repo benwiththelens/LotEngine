@@ -31,7 +31,7 @@ export async function generateMetadata(): Promise<Metadata> {
   }
 
   return {
-    title: tenant?.business_name || "LotEngine",
+    title: "LotEngine",
     description: "The Headless Dealership Engine",
   };
 }

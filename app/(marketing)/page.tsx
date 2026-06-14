@@ -8,12 +8,14 @@ import { ArrowRight, Zap, Camera, BarChart3, Share2 } from "lucide-react";
 function DemoTerminal() {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [errorMsg, setErrorMsg] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) return;
     
     setStatus('loading');
+    setErrorMsg("");
     try {
       const res = await fetch('/api/send-demo-request', {
         method: 'POST',
@@ -21,13 +23,17 @@ function DemoTerminal() {
         body: JSON.stringify({ email }),
       });
       
+      const data = await res.json();
+      
       if (res.ok) {
         setStatus('success');
       } else {
         setStatus('error');
+        setErrorMsg(data.error || "!! RETRY");
       }
     } catch (err) {
       setStatus('error');
+      setErrorMsg("!! CONNECTION_FAILURE");
     }
   };
 
@@ -57,7 +63,7 @@ function DemoTerminal() {
           required
         />
         {status === 'loading' && <div className="w-4 h-4 border-2 border-[#0055FF] border-t-transparent rounded-full animate-spin" />}
-        {status === 'error' && <p className="font-mono text-[9px] text-red-500 font-black">!! RETRY</p>}
+        {status === 'error' && <p className="font-mono text-[9px] text-red-500 font-black leading-none whitespace-nowrap">{errorMsg}</p>}
       </form>
     </div>
   );

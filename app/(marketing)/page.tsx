@@ -159,6 +159,83 @@ export default function MarketingPage() {
         </div>
       </section>
 
+      {/* Infrastructure Section (Deployment Tiers) */}
+      <section id="pricing" className="p-8 md:p-24 max-w-7xl mx-auto border-t-2 border-zinc-800">
+        <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-4">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-500 mb-2">Service Protocols</p>
+            <h2 className="text-4xl md:text-6xl font-black uppercase italic tracking-tighter leading-none">Infrastructure Tiers</h2>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {/* The Engine */}
+          <motion.div 
+            initial={{ opacity: 0, x: -20 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5 }}
+            viewport={{ once: true }}
+            className="bg-black border border-zinc-800 p-12 flex flex-col justify-between"
+          >
+            <div>
+              <div className="flex justify-between items-start mb-8">
+                <h3 className="text-3xl font-black uppercase italic tracking-tighter">The Engine</h3>
+                <div className="text-right">
+                  <p className="font-mono text-3xl font-black text-white">$499</p>
+                  <p className="font-mono text-[10px] font-bold uppercase text-zinc-500 mt-1">/ Month</p>
+                </div>
+              </div>
+              <p className="text-zinc-400 text-sm font-medium mb-10 leading-relaxed">The core headless operating system for rapid lot management.</p>
+              
+              <ul className="space-y-4 mb-12">
+                {["Multi-Tenant Database Access", "Mobile Asset Capture Wireframe", "5-Stage Service Kanban", "Automated Syndication Kits"].map((feat) => (
+                  <li key={feat} className="flex gap-3 items-center text-[11px] font-bold uppercase tracking-wider text-zinc-500">
+                    <div className="w-1.5 h-1.5 bg-zinc-800" />
+                    {feat}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <button className="w-full bg-transparent border-2 border-zinc-800 text-white py-5 text-xs font-black uppercase tracking-[0.2em] hover:bg-zinc-900 transition-all">
+              Deploy Engine
+            </button>
+          </motion.div>
+
+          {/* The Custom Chassis */}
+          <motion.div 
+            initial={{ opacity: 0, x: 20 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5 }}
+            viewport={{ once: true }}
+            className="bg-black border border-zinc-800 p-12 flex flex-col justify-between relative overflow-hidden"
+          >
+            <div className="absolute top-0 right-0 bg-[#0055FF] text-white text-[8px] font-black uppercase px-3 py-1 tracking-widest italic">Enterprise</div>
+            <div>
+              <div className="flex justify-between items-start mb-8">
+                <h3 className="text-3xl font-black uppercase italic tracking-tighter">The Custom Chassis</h3>
+                <div className="text-right">
+                  <p className="font-mono text-lg font-black text-zinc-500">$4,500 Setup</p>
+                  <p className="font-mono text-3xl font-black text-white">$499 <span className="text-xs font-bold text-zinc-500 uppercase tracking-tighter">/mo</span></p>
+                </div>
+              </div>
+              <p className="text-zinc-400 text-sm font-medium mb-10 leading-relaxed">Enterprise infrastructure and high-fidelity physical onboarding.</p>
+              
+              <ul className="space-y-4 mb-12">
+                {["Everything in The Engine", "Custom Next.js Storefront on Your Domain", "On-Site Workflow Integration", "Mechanic Camera Training"].map((feat) => (
+                  <li key={feat} className="flex gap-3 items-center text-[11px] font-bold uppercase tracking-wider text-white">
+                    <div className="w-1.5 h-1.5 bg-[#0055FF]" />
+                    {feat}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <button className="w-full bg-[#0055FF] text-white py-5 text-xs font-black uppercase tracking-[0.2em] hover:brightness-110 transition-all shadow-[8px_8px_0px_0px_rgba(0,85,255,0.1)]">
+              Request Enterprise Build
+            </button>
+          </motion.div>
+        </div>
+      </section>
+
       {/* Industrial Quote / Bottom CTA */}
       <section className="p-8 md:p-24 text-center border-t-2 border-zinc-800">
         <h2 className="text-4xl md:text-6xl font-black uppercase italic tracking-tighter mb-12">

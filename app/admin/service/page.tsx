@@ -92,7 +92,7 @@ function LiftGraphic({ color, isOccupied }: { color: string, isOccupied: boolean
 }
 
 // --- Sub-Component: Droppable Lift ---
-function ShopLift({ id, orders }: { id: string, orders: ServiceOrder[] }) {
+function ShopLift({ id, orders, onExpand }: { id: string, orders: ServiceOrder[], onExpand: (order: ServiceOrder) => void }) {
   const { setNodeRef, isOver } = useDroppable({ id });
   const orderOnLift = orders.find(o => o.status === id);
   const config = STATUS_CONFIG[id];
@@ -113,7 +113,7 @@ function ShopLift({ id, orders }: { id: string, orders: ServiceOrder[] }) {
 
       {orderOnLift ? (
         <div className="w-full max-w-sm z-10 animate-in fade-in zoom-in-95 duration-500">
-            <SortableCard order={orderOnLift} />
+            <SortableCard order={orderOnLift} onExpand={onExpand} />
         </div>
       ) : (
         <div className="text-center opacity-30 select-none pointer-events-none z-0">
@@ -131,7 +131,7 @@ function ShopLift({ id, orders }: { id: string, orders: ServiceOrder[] }) {
 }
 
 // --- Sub-Component: Droppable Lane ---
-function ShopLane({ id, orders, width = "w-72" }: { id: string, orders: ServiceOrder[], width?: string }) {
+function ShopLane({ id, orders, onExpand, width = "w-72" }: { id: string, orders: ServiceOrder[], onExpand: (order: ServiceOrder) => void, width?: string }) {
   const { setNodeRef, isOver } = useDroppable({ id });
   const laneOrders = orders.filter(o => o.status === id);
   const config = STATUS_CONFIG[id];
@@ -151,7 +151,7 @@ function ShopLane({ id, orders, width = "w-72" }: { id: string, orders: ServiceO
           }`}
         >
           {laneOrders.map((order) => (
-            <SortableCard key={order.id} order={order} />
+            <SortableCard key={order.id} order={order} onExpand={onExpand} />
           ))}
           {laneOrders.length === 0 && (
             <div className="border-4 border-dashed border-black/[0.03] rounded-lg p-12 text-center flex items-center justify-center h-40">
@@ -165,7 +165,7 @@ function ShopLane({ id, orders, width = "w-72" }: { id: string, orders: ServiceO
 }
 
 // --- Sub-Component: Sortable Card ---
-function SortableCard({ order, isOverlay = false }: { order: ServiceOrder, isOverlay?: boolean }) {
+function SortableCard({ order, isOverlay = false, onExpand }: { order: ServiceOrder, isOverlay?: boolean, onExpand?: (order: ServiceOrder) => void }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: order.id });
 
   const style = {
@@ -185,7 +185,19 @@ function SortableCard({ order, isOverlay = false }: { order: ServiceOrder, isOve
             <p className="text-[9px] font-black uppercase opacity-30 leading-none mb-1 tracking-tighter">Asset #{order.id.slice(0, 5)}</p>
             <h3 className="font-black uppercase italic leading-none text-xl tracking-tighter">{order.customer_name}</h3>
         </div>
-        {order.is_internal_recon && <span className="text-[8px] font-black uppercase bg-brand-primary text-white px-2 py-0.5 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">RECON</span>}
+        <div className="flex flex-col gap-2 items-end">
+          {order.is_internal_recon && <span className="text-[8px] font-black uppercase bg-brand-primary text-white px-2 py-0.5 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">RECON</span>}
+          <button 
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+              onExpand?.(order);
+            }}
+            className="p-1.5 hover:bg-black hover:text-white transition-colors border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-[2px] active:translate-y-[2px]"
+          >
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" /></svg>
+          </button>
+        </div>
       </div>
       
       {order.vehicles ? (
@@ -211,6 +223,7 @@ export default function ServiceBay() {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [showIntake, setShowIntake] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('shop');
+  const [terminal, setTerminal] = useState<{ isOpen: boolean; order: ServiceOrder | null }>({ isOpen: false, order: null });
   
   const [customerName, setCustomerName] = useState("");
   const [vehicleVin, setVehicleVin] = useState("");
@@ -287,6 +300,10 @@ export default function ServiceBay() {
 
   const activeOrder = activeId ? orders.find(o => o.id === activeId) : null;
 
+  const handleExpand = (order: ServiceOrder) => {
+    setTerminal({ isOpen: true, order });
+  };
+
   return (
     <div className="flex flex-col h-screen bg-zinc-50 overflow-hidden">
       <header className="p-6 bg-white border-b-4 border-black flex justify-between items-center z-20 shrink-0 shadow-sm">
@@ -325,16 +342,16 @@ export default function ServiceBay() {
           
           {viewMode === 'shop' ? (
             <div className="flex gap-10 h-full">
-                <ShopLane id="intake" orders={orders} width="w-80" />
+                <ShopLane id="intake" orders={orders} onExpand={handleExpand} width="w-80" />
                 
                 <div className="flex-1 flex flex-col gap-10">
-                    <ShopLift id="diagnostics" orders={orders} />
-                    <ShopLift id="in_progress" orders={orders} />
+                    <ShopLift id="diagnostics" orders={orders} onExpand={handleExpand} />
+                    <ShopLift id="in_progress" orders={orders} onExpand={handleExpand} />
                 </div>
                 
                 <div className="flex flex-col gap-10">
-                    <ShopLane id="parts_hold" orders={orders} />
-                    <ShopLane id="ready" orders={orders} />
+                    <ShopLane id="parts_hold" orders={orders} onExpand={handleExpand} />
+                    <ShopLane id="ready" orders={orders} onExpand={handleExpand} />
                 </div>
             </div>
           ) : (
@@ -344,6 +361,7 @@ export default function ServiceBay() {
                         key={id} 
                         id={id} 
                         orders={orders} 
+                        onExpand={handleExpand}
                         width="w-80"
                     />
                 ))}
@@ -355,6 +373,68 @@ export default function ServiceBay() {
           </DragOverlay>
         </DndContext>
       </main>
+
+      {terminal.isOpen && terminal.order && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-[4px] z-[100] flex items-center justify-center p-8">
+          <div className="bg-white border-4 border-black w-full h-full max-w-7xl flex flex-col shadow-[32px_32px_0px_0px_rgba(0,0,0,1)] overflow-hidden">
+            {/* Terminal Header */}
+            <header className="p-8 border-b-4 border-black flex justify-between items-center bg-zinc-50 shrink-0">
+              <div className="flex items-center gap-8">
+                <button 
+                  onClick={() => setTerminal({ isOpen: false, order: null })}
+                  className="group flex items-center gap-2 hover:text-brand-primary transition-colors"
+                >
+                  <span className="text-4xl font-black">←</span>
+                  <span className="font-black uppercase tracking-widest text-xs">Exit Terminal</span>
+                </button>
+                
+                <div className="h-12 w-1 bg-black/10" />
+                
+                <div>
+                  <div className="flex items-center gap-3 mb-1">
+                    <h2 className="text-3xl font-black uppercase italic tracking-tighter leading-none">
+                      {terminal.order.vehicles ? `${terminal.order.vehicles.year} ${terminal.order.vehicles.make} ${terminal.order.vehicles.model}` : 'Unlinked Asset'}
+                    </h2>
+                    {/* Priority Badge */}
+                    <div className={`px-3 py-1 text-[10px] font-black uppercase tracking-widest border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] ${
+                      terminal.order.priority === 'critical' ? 'bg-red-500 text-white' :
+                      terminal.order.priority === 'high' ? 'bg-yellow-500 text-black' :
+                      terminal.order.priority === 'standard' ? 'bg-green-500 text-white' :
+                      'bg-blue-500 text-white'
+                    }`}>
+                      {terminal.order.priority}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <p className="font-mono text-sm font-bold opacity-60">CUSTOMER: {terminal.order.customer_name.toUpperCase()}</p>
+                    {terminal.order.requested_completion && (
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-brand-primary animate-pulse" />
+                        <p className="font-mono text-sm font-bold text-brand-primary uppercase">ETA: {new Date(terminal.order.requested_completion).toLocaleString()}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-6">
+                <div className="text-right">
+                   <p className="text-[10px] font-black uppercase opacity-40 leading-none mb-1">Terminal Status</p>
+                   <p className="font-mono text-sm font-black uppercase">Active Connection // {STATUS_CONFIG[terminal.order.status]?.label.toUpperCase()}</p>
+                </div>
+              </div>
+            </header>
+            
+            {/* Main Terminal Body */}
+            <div className="flex-1 overflow-auto p-12 bg-zinc-100">
+               {/* Content for future tasks */}
+               <div className="border-4 border-dashed border-black/10 rounded-2xl h-full flex items-center justify-center">
+                  <p className="text-2xl font-black uppercase opacity-10 tracking-[0.5em]">Terminal Interface Loaded</p>
+               </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showIntake && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-[4px] z-[100] flex items-center justify-center p-4">

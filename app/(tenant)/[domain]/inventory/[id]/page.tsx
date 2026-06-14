@@ -3,10 +3,8 @@ import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-export default async function VehicleDetail({ params }: { params: { id: string } }) {
-  const { id } = await params;
-  const headerList = await headers();
-  const host = headerList.get("host") || "lot-engines.com";
+export default async function VehicleDetail({ params }: { params: Promise<{ id: string, domain: string }> }) {
+  const { id, domain: host } = await params;
 
   // 1. Fetch Tenant
   let { data: tenant } = await supabase

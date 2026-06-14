@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, use } from "react";
 import { decodeVin } from "@/lib/vin-service";
 import { lookupPlate } from "@/lib/plate-service";
 import { supabase } from "@/lib/supabase";
@@ -58,7 +58,8 @@ const parseCommaString = (val: string) => {
   return val.replace(/,/g, "");
 };
 
-export default function VehicleInventory() {
+export default function VehicleInventory({ params }: { params: Promise<{ domain: string }> }) {
+  const { domain: host } = use(params);
   const [inventory, setInventory] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(true);
   const [terminal, setTerminal] = useState<TerminalState>({ isOpen: false, mode: 'add', activeStep: 1, entryType: 'vin', id: null });
@@ -77,7 +78,7 @@ export default function VehicleInventory() {
 
   const fetchInventory = useCallback(async () => {
     setLoading(true);
-    let { data: tenant } = await supabase.from("tenants").select("id").eq("domain", typeof window !== 'undefined' ? window.location.host : '').single();
+    let { data: tenant } = await supabase.from("tenants").select("id").eq("domain", host).single();
     if (!tenant) {
       const { data: fallback } = await supabase.from("tenants").select("id").limit(1).single();
       tenant = fallback;
@@ -87,17 +88,17 @@ export default function VehicleInventory() {
       if (data) setInventory(data as Vehicle[]);
     }
     setLoading(false);
-  }, []);
+  }, [host]);
 
   const refreshInventoryQuietly = useCallback(async () => {
-    let { data: tenant } = await supabase.from("tenants").select("id").eq("domain", typeof window !== 'undefined' ? window.location.host : '').single();
+    let { data: tenant } = await supabase.from("tenants").select("id").eq("domain", host).single();
     if (!tenant) {
       const { data: fallback } = await supabase.from("tenants").select("id").limit(1).single();
       tenant = fallback;
     }
     const { data } = await supabase.from("vehicles").select("*").eq("tenant_id", tenant?.id).order("created_at", { ascending: false });
     if (data) setInventory(data as Vehicle[]);
-  }, []);
+  }, [host]);
 
   const processOfflineQueue = useCallback(async () => {
     const queue = JSON.parse(localStorage.getItem('lotengine_sync_queue') || '[]');
@@ -223,7 +224,11 @@ export default function VehicleInventory() {
       const updated = { ...formData, vin: targetVin, year: d.year.toString(), make: d.make, model: d.model };
       setFormData(updated);
       if (terminal.mode === 'add') {
-        const { data: tenant } = await supabase.from("tenants").select("id").eq("domain", typeof window !== 'undefined' ? window.location.host : '').single();
+        let { data: tenant } = await supabase.from("tenants").select("id").eq("domain", host).single();
+        if (!tenant) {
+          const { data: fallback } = await supabase.from("tenants").select("id").limit(1).single();
+          tenant = fallback;
+        }
         const { data: { user } } = await supabase.auth.getUser();
         const payload = sanitizePayload({ ...updated, tenant_id: tenant?.id, processed_by: user?.id, status: 'draft' });
         if (!isOnline) {
@@ -255,7 +260,11 @@ export default function VehicleInventory() {
     const { error } = await supabase.from("vehicles").update(p).eq("id", terminal.id);
     if (!error) {
       if (terminal.mode === 'add' && formData.initiate_recon) {
-        const { data: tenant } = await supabase.from("tenants").select("id").eq("domain", typeof window !== 'undefined' ? window.location.host : '').single();
+        let { data: tenant } = await supabase.from("tenants").select("id").eq("domain", host).single();
+        if (!tenant) {
+          const { data: fallback } = await supabase.from("tenants").select("id").limit(1).single();
+          tenant = fallback;
+        }
         await supabase.from("service_orders").insert({ tenant_id: tenant?.id, vehicle_id: terminal.id, customer_name: "INTERNAL RECON", status: "intake", is_internal_recon: true });
       }
       fetchInventory(); if (addAnother) openAddTerminal(); else setTerminal((prev) => ({ ...prev, activeStep: 3 }));
@@ -286,17 +295,17 @@ export default function VehicleInventory() {
         <div className="flex items-center gap-4 md:gap-6 lg:gap-10">
           <div>
             <p className="text-[10px] font-black uppercase text-brand-primary mb-1">Lot Management</p>
-            <h1 className="text-xl md:text-2xl lg:text-4xl font-black uppercase italic tracking-tighter leading-none">Unified Inventory</h1>
+            <h1 className="text-xl md:text-2xl lg:text-4xl font-black uppercase italic tracking-tighter leading-none text-black">Unified Inventory</h1>
           </div>
           <div className="hidden md:flex gap-4 lg:gap-8 border-l-2 border-black/5 pl-4 lg:pl-10 text-black">
-            <div><p className="text-[10px] font-black opacity-30 uppercase mb-1 text-black">Units</p><p className="text-lg lg:text-xl font-mono font-black italic">{inventory.length}</p></div>
+            <div><p className="text-[10px] font-black opacity-30 uppercase mb-1 text-black">Units</p><p className="text-lg lg:text-xl font-mono font-black italic text-black">{inventory.length}</p></div>
             <div><p className="text-[10px] font-black opacity-30 uppercase mb-1 text-black">Sales</p><p className="text-lg lg:text-xl font-mono font-black italic text-brand-primary">{inventory.filter(v => v.status === 'available').length}</p></div>
             <div><p className="text-[10px] font-black opacity-30 uppercase mb-1 text-black">Valuation</p><p className="text-lg lg:text-xl font-mono font-black italic text-black">${inventory.reduce((a, v) => a + (Number(v.price) || 0), 0).toLocaleString()}</p></div>
           </div>
         </div>
-        <div className="flex gap-4">
+        <div className="flex gap-4 text-black">
           {!isOnline && <div className="flex items-center gap-2 border-4 border-yellow-400 p-2 bg-yellow-50 shadow-[4px_4px_0px_0px_rgba(250,204,21,1)] text-black"><span className="animate-ping h-2 w-2 rounded-full bg-yellow-400" /><p className="text-[9px] font-black uppercase">Offline</p></div>}
-          <button onClick={openAddTerminal} className="bg-black text-white px-4 py-2 md:px-6 md:py-3 lg:px-10 lg:py-4 font-black uppercase text-[10px] md:text-xs border-b-4 border-r-4 border-black/30 shadow-xl hover:bg-brand-primary transition-all">Add <span className="hidden lg:inline">New </span>Unit</button>
+          <button onClick={openAddTerminal} className="bg-black text-white px-4 py-2 md:px-6 md:py-3 lg:px-10 lg:py-4 font-black uppercase text-[10px] md:text-xs border-b-4 border-r-4 border-black/30 shadow-xl hover:bg-brand-primary transition-all text-white">Add <span className="hidden lg:inline">New </span>Unit</button>
         </div>
       </header>
 
@@ -340,13 +349,13 @@ export default function VehicleInventory() {
                 {loading ? <tr><td colSpan={5} className="p-20 text-center animate-pulse uppercase font-black text-black">Syncing...</td></tr> : inventoryWithMetrics.map((v) => {
                   return (
                     <tr key={v.id} className="hover:bg-zinc-50 group transition-colors text-black">
-                      <td className="p-3 lg:p-5 text-black"><p className="text-[10px] font-black uppercase text-brand-primary mb-1 tracking-tighter">VIN: {v.vin}</p><h2 className="text-lg lg:text-2xl font-black uppercase italic leading-none">{v.year} {v.make}</h2><p className="text-[10px] lg:text-xs font-bold opacity-60 uppercase">{v.model}</p></td>
-                      <td className="p-3 lg:p-5 text-center text-black"><div className="flex flex-col items-center gap-1 text-black"><span className={`text-[9px] font-black border-2 border-black px-2 py-0.5 uppercase ${v.status === 'available' ? 'bg-green-400' : 'bg-white'}`}>{v.status}</span><span className={`text-[8px] font-black uppercase px-2 ${v.age > 60 ? 'bg-red-600 text-white animate-pulse' : v.age > 30 ? 'bg-yellow-400' : 'opacity-30'}`}>{v.age === 0 ? "NEW" : `${v.age} DAYS`}</span></div></td>
-                      <td className="p-3 lg:p-5 text-center text-black"><p className="font-mono font-black text-lg lg:text-xl text-brand-primary leading-none text-brand-primary">${Number(v.price || 0).toLocaleString()}</p><p className="font-mono text-[10px] opacity-40 uppercase mt-1">{v.mileage?.toLocaleString() || "---"} MI</p></td>
+                      <td className="p-3 lg:p-5 text-black"><p className="text-[10px] font-black uppercase text-brand-primary mb-1 tracking-tighter text-brand-primary">VIN: {v.vin}</p><h2 className="text-lg lg:text-2xl font-black uppercase italic leading-none text-black">{v.year} {v.make}</h2><p className="text-[10px] lg:text-xs font-bold opacity-60 uppercase text-black">{v.model}</p></td>
+                      <td className="p-3 lg:p-5 text-center text-black"><div className="flex flex-col items-center gap-1 text-black"><span className={`text-[9px] font-black border-2 border-black px-2 py-0.5 uppercase ${v.status === 'available' ? 'bg-green-400' : 'bg-white'}`}>{v.status}</span><span className={`text-[8px] font-black uppercase px-2 ${v.age && v.age > 60 ? 'bg-red-600 text-white animate-pulse' : v.age && v.age > 30 ? 'bg-yellow-400' : 'opacity-30'}`}>{v.age === 0 ? "NEW" : `${v.age} DAYS`}</span></div></td>
+                      <td className="p-3 lg:p-5 text-center text-black"><p className="font-mono font-black text-lg lg:text-xl text-brand-primary leading-none text-brand-primary">${Number(v.price || 0).toLocaleString()}</p><p className="font-mono text-[10px] opacity-40 uppercase mt-1 text-black">{(Number(v.mileage) || 0).toLocaleString()} MI</p></td>
                       <td className="p-3 lg:p-5 text-center text-black"><div className="flex flex-wrap justify-center gap-1 text-black">{v.audit.length === 0 ? <span className="text-[8px] font-black text-green-600 border px-1 uppercase">Verified</span> : v.audit.map(f => <span key={f} className="text-[8px] font-black bg-brand-primary text-white px-1 uppercase border border-black">{f}</span>)}</div></td>
                       <td className="p-3 lg:p-5 text-right text-black">
                           <div className="flex justify-end gap-3 transition-opacity text-black">
-                              <button onClick={() => openEditTerminal(v)} className="bg-black text-white p-3 hover:bg-brand-primary border-b-2 border-r-2 border-black/20 text-white shadow-sm"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 fill-white" viewBox="0 0 20 20"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" /></svg></button>
+                              <button onClick={() => openEditTerminal(v)} className="bg-black text-white p-3 hover:bg-brand-primary border-b-2 border-r-2 border-black/20 text-white shadow-sm"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 fill-white text-white" viewBox="0 0 20 20" fill="currentColor"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" /></svg></button>
                               <button onClick={() => handleDeleteAsset(v.id)} className="bg-white text-red-600 p-3 border-2 border-black hover:bg-red-50 text-red-600 shadow-sm"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" /></svg></button>
                           </div>
                       </td>
@@ -362,20 +371,20 @@ export default function VehicleInventory() {
             <header className="shrink-0 bg-white border-b-4 border-black p-4 md:p-8 flex justify-between items-center z-50 text-black">
               <div>
                 <div className="flex items-center gap-4 mb-1">
-                    <p className="text-[10px] font-black uppercase text-brand-primary tracking-[0.2em]">{terminal.mode} Active</p>
+                    <p className="text-[10px] font-black uppercase text-brand-primary tracking-[0.2em] text-brand-primary">{terminal.mode} Active</p>
                     {syncStatus === 'saving' && <span className="bg-yellow-400 text-black px-2 py-0.5 text-[8px] font-black animate-pulse border border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">SYNCING...</span>}
-                    {syncStatus === 'saved' && <span className="bg-green-500 text-white px-2 py-0.5 text-[8px] font-black border border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] tracking-widest uppercase">SAVED</span>}
-                    {syncStatus === 'error' && <span className="bg-red-600 text-white px-2 py-0.5 text-[8px] font-black border border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] uppercase">SYNC ERROR</span>}
+                    {syncStatus === 'saved' && <span className="bg-green-500 text-white px-2 py-0.5 text-[8px] font-black border border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] tracking-widest uppercase text-white">SAVED</span>}
+                    {syncStatus === 'error' && <span className="bg-red-600 text-white px-2 py-0.5 text-[8px] font-black border border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] uppercase text-white">SYNC ERROR</span>}
                     {!isOnline && <span className="bg-brand-primary text-white px-2 py-0.5 text-[8px] font-black animate-pulse border border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] text-white">OFFLINE DRAFT</span>}
                 </div>
-                <h2 className="text-2xl md:text-4xl font-black uppercase italic tracking-tighter leading-none">{terminal.activeStep === 1 ? 'Intake Terminal' : terminal.activeStep === 3 ? 'Sync Confirmed' : `${formData.year} ${formData.make} ${formData.model}`}</h2>
+                <h2 className="text-2xl md:text-4xl font-black uppercase italic tracking-tighter leading-none text-black">{terminal.activeStep === 1 ? 'Intake Terminal' : terminal.activeStep === 3 ? 'Sync Confirmed' : `${formData.year} ${formData.make} ${formData.model}`}</h2>
               </div>
-              <button onClick={() => setTerminal({ ...terminal, isOpen: false })} className="text-4xl font-black hover:text-brand-primary transition-colors border-4 border-black h-10 w-10 flex items-center justify-center bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">X</button>
+              <button onClick={() => setTerminal({ ...terminal, isOpen: false })} className="text-4xl font-black hover:text-brand-primary transition-colors border-4 border-black h-10 w-10 flex items-center justify-center bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] text-black">X</button>
             </header>
             <div className="flex-1 overflow-y-auto p-4 md:p-12 text-black">
                 {terminal.activeStep === 1 ? (
                   <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 text-center py-10">
-                    <div className="flex justify-center gap-4"><button onClick={() => setTerminal({...terminal, entryType: 'vin'})} className={`px-10 py-4 text-xs font-black uppercase border-4 border-black transition-all ${terminal.entryType === 'vin' ? 'bg-black text-white shadow-xl' : 'opacity-30'}`}>VIN Signature</button><button onClick={() => setTerminal({...terminal, entryType: 'plate'})} className={`px-10 py-4 text-xs font-black uppercase border-4 border-black transition-all ${terminal.entryType === 'plate' ? 'bg-black text-white shadow-xl' : 'opacity-30'}`}>Plate Search</button></div>
+                    <div className="flex justify-center gap-4"><button onClick={() => setTerminal({...terminal, entryType: 'vin'})} className={`px-10 py-4 text-xs font-black uppercase border-4 border-black transition-all ${terminal.entryType === 'vin' ? 'bg-black text-white shadow-xl' : 'bg-white text-black opacity-30'}`}>VIN Signature</button><button onClick={() => setTerminal({...terminal, entryType: 'plate'})} className={`px-10 py-4 text-xs font-black uppercase border-4 border-black transition-all ${terminal.entryType === 'plate' ? 'bg-black text-white shadow-xl' : 'bg-white text-black opacity-30'}`}>Plate Search</button></div>
                     <div className="bg-zinc-50 p-8 md:p-16 border-4 border-black border-dashed">
                       <input autoFocus placeholder="IDENTIFIER" className="w-full bg-transparent border-b-4 border-black p-4 font-mono font-black text-center text-3xl md:text-5xl uppercase outline-none focus:text-brand-primary text-black" value={terminal.entryType === 'vin' ? formData.vin : formData.plate} onChange={(e) => setFormData({ ...formData, [terminal.entryType]: e.target.value.toUpperCase() })} maxLength={terminal.entryType === 'vin' ? 17 : 10} />
                       {(errors.vin || errors.plate) && <p className="text-brand-primary font-black uppercase text-xs mt-8 bg-brand-primary/10 p-4 border-2 border-brand-primary animate-pulse text-brand-primary">{errors.vin || errors.plate}</p>}
@@ -386,39 +395,39 @@ export default function VehicleInventory() {
                   <div className="max-w-2xl mx-auto space-y-16 pb-20 text-black">
                     {Object.keys(errors).length > 0 && <div className="bg-brand-primary p-6 border-4 border-black text-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] italic text-xs font-bold uppercase space-y-1 text-white"><p key="err-title" className="underline">Critical Validation Failures</p>{Object.values(errors).map((err, i) => <p key={i}>!! {err}</p>)}</div>}
                     
-                    <div><p className="text-xs font-black uppercase text-brand-primary mb-6 border-b-4 border-black pb-2">01. Identity Persistence</p>
+                    <div><p className="text-xs font-black uppercase text-brand-primary mb-6 border-b-4 border-black pb-2 text-brand-primary text-black">01. Identity Persistence</p>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                            <div><label className="block text-[9px] font-black uppercase opacity-40 mb-1">Exterior Color*</label><input className={`w-full border-4 border-black p-4 font-black uppercase text-sm outline-none focus:ring-4 focus:ring-brand-primary/20 ${errors.exterior_color?'border-brand-primary':''}`} value={formData.exterior_color} onChange={e=>handleFormChange({ exterior_color:e.target.value})} /></div>
-                            <div><label className="block text-[9px] font-black uppercase opacity-40 mb-1">Interior Color</label><input className="w-full border-4 border-black p-4 font-black uppercase text-sm outline-none focus:ring-4 focus:ring-brand-primary/20" value={formData.interior_color} onChange={e=>handleFormChange({ interior_color:e.target.value})} /></div>
+                            <div><label className="block text-[9px] font-black uppercase opacity-40 mb-1 text-black">Exterior Color*</label><input className={`w-full border-4 border-black p-4 font-black uppercase text-sm outline-none focus:ring-4 focus:ring-brand-primary/20 text-black ${errors.exterior_color?'border-brand-primary':''}`} value={formData.exterior_color} onChange={e=>handleFormChange({ exterior_color:e.target.value})} /></div>
+                            <div><label className="block text-[9px] font-black uppercase opacity-40 mb-1 text-black">Interior Color</label><input className="w-full border-4 border-black p-4 font-black uppercase text-sm outline-none focus:ring-4 focus:ring-brand-primary/20 text-black" value={formData.interior_color} onChange={e=>handleFormChange({ interior_color:e.target.value})} /></div>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-6">
-                            <div><label className="block text-[9px] font-black uppercase opacity-40 mb-1">Fuel Type</label><select className="w-full border-4 border-black p-4 font-black uppercase text-sm appearance-none bg-white text-black" value={formData.fuel_type} onChange={e=>handleFormChange({ fuel_type:e.target.value})}><option value="">Unknown</option>{FUEL_TYPES.map(f => <option key={f} value={f}>{f}</option>)}</select></div>
-                            <div><label className="block text-[9px] font-black uppercase opacity-40 mb-1">Drivetrain</label><select className="w-full border-4 border-black p-4 font-black uppercase text-sm appearance-none bg-white text-black" value={formData.drivetrain} onChange={e=>handleFormChange({ drivetrain:e.target.value})}><option value="">Unknown</option>{DRIVETRAINS.map(d => <option key={d} value={d}>{d}</option>)}</select></div>
+                            <div><label className="block text-[9px] font-black uppercase opacity-40 mb-1 text-black">Fuel Type</label><select className="w-full border-4 border-black p-4 font-black uppercase text-sm appearance-none bg-white text-black" value={formData.fuel_type} onChange={e=>handleFormChange({ fuel_type:e.target.value})}><option value="">Unknown</option>{FUEL_TYPES.map(f => <option key={f} value={f}>{f}</option>)}</select></div>
+                            <div><label className="block text-[9px] font-black uppercase opacity-40 mb-1 text-black">Drivetrain</label><select className="w-full border-4 border-black p-4 font-black uppercase text-sm appearance-none bg-white text-black" value={formData.drivetrain} onChange={e=>handleFormChange({ drivetrain:e.target.value})}><option value="">Unknown</option>{DRIVETRAINS.map(d => <option key={d} value={d}>{d}</option>)}</select></div>
                         </div>
                     </div>
 
-                    <div><p className="text-xs font-black uppercase text-brand-primary mb-6 border-b-4 border-black pb-2">02. Pricing & Market Strategy</p>
+                    <div><p className="text-xs font-black uppercase text-brand-primary mb-6 border-b-4 border-black pb-2 text-brand-primary text-black">02. Pricing & Market Strategy</p>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
                             <div className="space-y-6">
-                                <div><label className="block text-[9px] font-black uppercase mb-1 opacity-40 italic">Retail Price ($)*</label><input type="text" className={`w-full border-4 border-black p-5 font-mono font-black text-3xl outline-none ${errors.price?'border-brand-primary':''}`} value={formatWithCommas(formData.price)} onChange={e=>handleFormChange({ price:parseCommaString(e.target.value)})} /></div>
-                                <div><label className="block text-[9px] font-black uppercase mb-1 opacity-40 italic">Odometer (MI)*</label><input type="text" className={`w-full border-4 border-black p-5 font-mono font-black text-3xl outline-none ${errors.mileage?'border-brand-primary':''}`} value={formatWithCommas(formData.mileage)} onChange={e=>handleFormChange({ mileage:parseCommaString(e.target.value)})} /></div>
+                                <div><label className="block text-[9px] font-black uppercase mb-1 opacity-40 italic text-black">Retail Price ($)*</label><input type="text" className={`w-full border-4 border-black p-5 font-mono font-black text-3xl outline-none text-black ${errors.price?'border-brand-primary':''}`} value={formatWithCommas(formData.price)} onChange={e=>handleFormChange({ price:parseCommaString(e.target.value)})} /></div>
+                                <div><label className="block text-[9px] font-black uppercase mb-1 opacity-40 italic text-black">Odometer (MI)*</label><input type="text" className={`w-full border-4 border-black p-5 font-mono font-black text-3xl outline-none text-black ${errors.mileage?'border-brand-primary':''}`} value={formatWithCommas(formData.mileage)} onChange={e=>handleFormChange({ mileage:parseCommaString(e.target.value)})} /></div>
                             </div>
                             <div className="space-y-6">
-                                <div><label className="block text-[9px] font-black uppercase mb-1 opacity-40 italic">Acquisition Cost ($)</label><input type="text" className="w-full border-4 border-black p-5 font-mono font-black text-3xl outline-none" value={formatWithCommas(formData.acquisition_cost)} onChange={e=>handleFormChange({ acquisition_cost:parseCommaString(e.target.value)})} /></div>
+                                <div><label className="block text-[9px] font-black uppercase mb-1 opacity-40 italic text-black">Acquisition Cost ($)</label><input type="text" className="w-full border-4 border-black p-5 font-mono font-black text-3xl outline-none text-black" value={formatWithCommas(formData.acquisition_cost)} onChange={e=>handleFormChange({ acquisition_cost:parseCommaString(e.target.value)})} /></div>
                                 <div><label className="block text-[9px] font-black uppercase mb-1 opacity-40 italic text-black">System Status*</label><select className="w-full border-4 border-black p-5 font-black uppercase text-xl appearance-none bg-white text-black" value={formData.status} onChange={e=>handleFormChange({ status:e.target.value})}><option value="draft">Draft</option><option value="available">Available</option><option value="sold">Sold</option></select></div>
                             </div>
                         </div>
                     </div>
-                    <div><p className="text-xs font-black uppercase text-brand-primary mb-6 border-b-4 border-black pb-2 text-black">03. Condition & Recon</p>
+                    <div><p className="text-xs font-black uppercase text-brand-primary mb-6 border-b-4 border-black pb-2 text-brand-primary text-black">03. Condition & Recon</p>
                         <div className="space-y-8 text-black">
                             <select className="w-full border-4 border-black p-5 font-black uppercase outline-none text-2xl appearance-none bg-white text-black" value={formData.condition} onChange={e=>handleFormChange({ condition:e.target.value})}><option value="Excellent">Excellent - Front Line</option><option value="Good">Good - Standard</option><option value="Fair">Fair - Value Unit</option><option value="Needs Work">Needs Work</option></select>
-                            {terminal.mode === 'add' && <label className="flex items-center gap-6 cursor-pointer bg-zinc-100 p-8 border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] text-black"><input type="checkbox" className="w-12 h-12 border-4 border-black checked:bg-brand-primary appearance-none cursor-pointer" checked={formData.initiate_recon} onChange={(e) => handleFormChange({ initiate_recon: e.target.checked })} /><div><p className="text-xl font-black uppercase leading-none">Auto-Initiate Recon</p><p className="text-[10px] font-bold opacity-40 mt-2 uppercase text-black">Generate Shop Floor Ticket on Finalize</p></div></label>}
+                            {terminal.mode === 'add' && <label className="flex items-center gap-6 cursor-pointer bg-zinc-100 p-8 border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] text-black"><input type="checkbox" className="w-12 h-12 border-4 border-black checked:bg-brand-primary appearance-none cursor-pointer" checked={formData.initiate_recon} onChange={(e) => handleFormChange({ initiate_recon: e.target.checked })} /><div><p className="text-xl font-black uppercase leading-none text-black">Auto-Initiate Recon</p><p className="text-[10px] font-bold opacity-40 mt-2 uppercase text-black text-black">Generate Shop Floor Ticket on Finalize</p></div></label>}
                         </div>
                     </div>
 
-                    <div><p className="text-xs font-black uppercase text-brand-primary mb-6 border-b-4 border-black pb-2 text-black">04. Feature Matrix</p><div className="grid grid-cols-2 sm:grid-cols-5 gap-3 text-black">{COMMON_FEATURES.map(f => (<button key={f} onClick={() => toggleFeature(f)} className={`p-4 text-[9px] font-black uppercase border-2 border-black transition-all ${formData.features?.includes(f) ? 'bg-black text-white shadow-inner' : 'bg-white text-black opacity-30 hover:opacity-100'}`}>{f}</button>))}</div></div>
+                    <div><p className="text-xs font-black uppercase text-brand-primary mb-6 border-b-4 border-black pb-2 text-brand-primary text-black">04. Feature Matrix</p><div className="grid grid-cols-2 sm:grid-cols-5 gap-3 text-black">{COMMON_FEATURES.map(f => (<button key={f} onClick={() => toggleFeature(f)} className={`p-4 text-[9px] font-black uppercase border-2 border-black transition-all ${formData.features?.includes(f) ? 'bg-black text-white shadow-inner' : 'bg-white text-black opacity-30 hover:opacity-100'}`}>{f}</button>))}</div></div>
 
-                    <div><p className="text-xs font-black uppercase text-brand-primary mb-6 border-b-4 border-black pb-2 text-black">05. Strategy</p><textarea rows={6} placeholder="DESCRIBE ASSET..." className="w-full border-4 border-black p-8 font-bold text-sm outline-none shadow-inner text-black" value={formData.public_description} onChange={e=>handleFormChange({ public_description:e.target.value})} /></div>
+                    <div><p className="text-xs font-black uppercase text-brand-primary mb-6 border-b-4 border-black pb-2 text-brand-primary text-black">05. Strategy</p><textarea rows={6} placeholder="DESCRIBE ASSET..." className="w-full border-4 border-black p-8 font-bold text-sm outline-none shadow-inner text-black bg-white" value={formData.public_description} onChange={e=>handleFormChange({ public_description:e.target.value})} /></div>
 
                     <div className="pt-12 border-t-4 border-black/10 flex flex-col sm:flex-row gap-6 text-black">
                         <button onClick={() => commitAsset(false)} className="flex-1 bg-black text-white py-10 font-black uppercase tracking-[0.3em] shadow-2xl hover:bg-brand-primary transition-all hover:-translate-y-1 text-white">Finalize & Close</button>
@@ -427,11 +436,11 @@ export default function VehicleInventory() {
                   </div>
                 ) : (
                     <div className="max-w-xl mx-auto py-20 animate-in zoom-in-95 duration-500 text-center text-black">
-                        <div className="w-24 h-24 bg-black text-white rounded-full flex items-center justify-center mx-auto mb-10 shadow-[8px_8px_0px_0px_rgba(227,66,52,1)] text-white"><svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={4} d="M5 13l4 4L19 7" /></svg></div>
-                        <h3 className="text-5xl font-black uppercase italic tracking-tighter mb-12">Asset Synced</h3>
+                        <div className="w-24 h-24 bg-black text-white rounded-full flex items-center justify-center mx-auto mb-10 shadow-[8px_8px_0px_0px_rgba(227,66,52,1)] text-white"><svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg></div>
+                        <h3 className="text-5xl font-black uppercase italic tracking-tighter mb-12 text-black">Asset Synced</h3>
                         <div className="bg-zinc-50 border-4 border-black p-8 text-left space-y-6 mb-12 shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] text-black">
-                            <div className="flex justify-between border-b pb-2 text-black"><p className="text-[10px] font-black opacity-40 uppercase">Identity</p><p className="font-black uppercase">{formData.year} {formData.make} {formData.model}</p></div>
-                            <div className="flex justify-between border-b pb-2 text-black"><p className="text-[10px] font-black opacity-40 uppercase">Price</p><p className="font-mono font-black text-brand-primary">${Number(formData.price).toLocaleString()}</p></div>
+                            <div className="flex justify-between border-b pb-2 text-black"><p className="text-[10px] font-black opacity-40 uppercase text-black">Identity</p><p className="font-black uppercase text-black">{formData.year} {formData.make} {formData.model}</p></div>
+                            <div className="flex justify-between border-b pb-2 text-black"><p className="text-[10px] font-black opacity-40 uppercase text-black">Price</p><p className="font-mono font-black text-brand-primary">${Number(formData.price).toLocaleString()}</p></div>
                         </div>
                         <div className="flex flex-col gap-4 text-black">
                             <button onClick={openAddTerminal} className="w-full bg-black text-white py-8 font-black uppercase tracking-[0.3em] shadow-xl hover:bg-brand-primary transition-all text-white">Onboard Next Unit</button>

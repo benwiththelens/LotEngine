@@ -2,9 +2,8 @@ import { headers } from "next/headers";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 
-export default async function Home() {
-  const headerList = await headers();
-  const host = headerList.get("host") || "lot-engines.com";
+export default async function Home({ params }: { params: Promise<{ domain: string }> }) {
+  const { domain: host } = await params;
 
   // 1. Fetch Tenant (Robust Fallback for Vercel)
   let { data: tenant } = await supabase

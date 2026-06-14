@@ -2,9 +2,8 @@ import { headers } from "next/headers";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 
-export default async function PublicInventory() {
-  const headerList = await headers();
-  const host = headerList.get("host") || "lot-engines.com";
+export default async function PublicInventory({ params }: { params: Promise<{ domain: string }> }) {
+  const { domain: host } = await params;
 
   // 1. Fetch Tenant
   let { data: tenant } = await supabase

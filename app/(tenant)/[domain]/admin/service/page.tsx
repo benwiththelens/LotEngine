@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, use } from "react";
 import { supabase } from "@/lib/supabase";
 import { Maximize2, Plus, CheckCircle2, Circle, Clock, Camera, MessageSquare, ArrowRight } from "lucide-react";
 import {
@@ -253,7 +253,7 @@ function TerminalOverlay({
 
         {/* Timeline */}
         <div className="border-b-4 border-black bg-white p-3 md:p-6 shrink-0 overflow-x-auto">
-          <div className="flex items-center justify-between relative min-w-[500px] max-w-4xl mx-auto">
+          <div className="flex items-center justify-between relative min-w-[500px] max-w-4xl mx-auto text-black">
              <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-0.5 md:h-1 bg-zinc-200 -z-10" />
              {KANBAN_ORDER.map((statusId, index) => {
                const config = STATUS_CONFIG[statusId];
@@ -283,7 +283,7 @@ function TerminalOverlay({
 
         {/* Main Terminal Body */}
         <div className="flex-1 overflow-auto p-3 md:p-12 bg-zinc-100 flex flex-col lg:flex-row gap-6 md:gap-8">
-            <div className="flex-1 space-y-6 md:space-y-8 max-w-3xl">
+            <div className="flex-1 space-y-6 md:space-y-8 max-w-3xl text-black">
                 {/* Checklists */}
                 <div className="bg-white border-4 border-black p-4 md:p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
                     <h3 className="text-lg md:text-xl font-black uppercase italic tracking-tighter border-b-2 border-black pb-3 md:pb-4 mb-4 md:mb-6 text-black">Procedure Checklist</h3>
@@ -359,7 +359,7 @@ function TerminalOverlay({
                 </div>
             </div>
             
-            <div className="flex-1 flex flex-col gap-6 md:gap-8">
+            <div className="flex-1 flex flex-col gap-6 md:gap-8 text-black">
                 {/* Quick Actions */}
                 <div className="grid grid-cols-3 gap-3 md:gap-4">
                     <button type="button" className="bg-white border-2 border-black p-3 md:p-4 flex flex-col items-center justify-center gap-1 md:gap-2 hover:bg-black hover:text-white transition-colors shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none group text-black">
@@ -391,7 +391,7 @@ function TerminalOverlay({
         </div>
 
         {/* Smart Footer */}
-        <footer className="p-4 md:p-6 border-t-4 border-black bg-white flex justify-between items-center shrink-0">
+        <footer className="p-4 md:p-6 border-t-4 border-black bg-white flex justify-between items-center shrink-0 text-black">
             <div className="flex items-center gap-2 md:gap-4">
                 <div className="w-2 md:w-3 h-2 md:h-3 rounded-full bg-brand-primary animate-pulse" />
                 <span className="font-mono text-[8px] md:text-[10px] font-black uppercase tracking-widest opacity-50 text-black">Terminal Active</span>
@@ -423,7 +423,8 @@ function TerminalOverlay({
   );
 }
 
-export default function ServiceBay() {
+export default function ServiceBay({ params }: { params: Promise<{ domain: string }> }) {
+  const { domain: host } = use(params);
   const [orders, setOrders] = useState<ServiceOrder[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [showIntake, setShowIntake] = useState(false);
@@ -441,10 +442,10 @@ export default function ServiceBay() {
     fetchOrders();
     const channel = supabase.channel("service_orders_shop").on("postgres_changes", { event: "*", schema: "public", table: "service_orders" }, () => fetchOrders()).subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, []);
+  }, [host]);
 
   async function fetchOrders() {
-    let { data: tenant } = await supabase.from("tenants").select("id").eq("domain", typeof window !== 'undefined' ? window.location.host : '').single();
+    let { data: tenant } = await supabase.from("tenants").select("id").eq("domain", host).single();
     if (!tenant) {
       const { data: fallback } = await supabase.from("tenants").select("id").limit(1).single();
       tenant = fallback;
@@ -490,7 +491,7 @@ export default function ServiceBay() {
 
   async function handleIntake(e: React.FormEvent) {
     e.preventDefault();
-    let { data: tenant } = await supabase.from("tenants").select("id").eq("domain", typeof window !== 'undefined' ? window.location.host : '').single();
+    let { data: tenant } = await supabase.from("tenants").select("id").eq("domain", host).single();
     if (!tenant) {
       const { data: fallback } = await supabase.from("tenants").select("id").limit(1).single();
       tenant = fallback;
@@ -510,10 +511,10 @@ export default function ServiceBay() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-zinc-50 overflow-hidden">
-      <header className="p-4 md:p-6 bg-white border-b-4 border-black flex justify-between items-center z-20 shrink-0 shadow-sm text-black">
+    <div className="flex flex-col h-screen bg-zinc-50 overflow-hidden text-black font-sans">
+      <header className="p-4 md:p-6 bg-white border-b-4 border-black flex justify-between items-center z-20 shrink-0 shadow-sm text-black font-sans">
         <div>
-          <p className="text-[10px] font-black uppercase tracking-widest text-brand-primary mb-1">Service Bay Hub</p>
+          <p className="text-[10px] font-black uppercase tracking-widest text-brand-primary mb-1 text-brand-primary">Service Bay Hub</p>
           <h1 className="text-xl md:text-3xl font-black uppercase italic tracking-tighter leading-none text-black">Kanban Grid</h1>
         </div>
 
@@ -556,20 +557,20 @@ export default function ServiceBay() {
       {showIntake && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-[4px] z-[100] flex items-center justify-center p-4 text-black">
           <div className="bg-white border-4 border-black w-full max-w-lg p-10 shadow-[20px_20px_0px_0px_rgba(227,66,52,1)]">
-            <div className="flex justify-between items-start mb-8">
+            <div className="flex justify-between items-start mb-8 text-black">
               <div>
-                <p className="text-[10px] font-black uppercase tracking-widest text-brand-primary mb-1">Authorization Pending</p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-brand-primary mb-1 text-brand-primary font-sans">Authorization Pending</p>
                 <h2 className="text-4xl font-black uppercase italic tracking-tighter leading-none text-black">Job Intake</h2>
               </div>
-              <button onClick={() => setShowIntake(false)} className="text-3xl font-black hover:text-brand-primary transition-colors">×</button>
+              <button onClick={() => setShowIntake(false)} className="text-3xl font-black hover:text-brand-primary transition-colors text-black">×</button>
             </div>
             <form onSubmit={handleIntake} className="space-y-6">
               <div>
-                <label className="block text-[10px] font-black uppercase mb-2 tracking-widest opacity-50">Customer Authority</label>
+                <label className="block text-[10px] font-black uppercase mb-2 tracking-widest opacity-50 text-black">Customer Authority</label>
                 <input autoFocus required className="w-full border-4 border-black p-4 font-black uppercase text-xl outline-none focus:ring-4 focus:ring-brand-primary/20 text-black" value={customerName} onChange={(e) => setCustomerName(e.target.value)} />
               </div>
               <div>
-                <label className="block text-[10px] font-black uppercase mb-2 tracking-widest opacity-50">Asset VIN Signature</label>
+                <label className="block text-[10px] font-black uppercase mb-2 tracking-widest opacity-50 text-black">Asset VIN Signature</label>
                 <input placeholder="17-DIGIT VIN" className="w-full border-4 border-black p-4 font-mono font-black uppercase text-xl outline-none focus:ring-4 focus:ring-brand-primary/20 text-black" value={vehicleVin} onChange={(e) => setVehicleVin(e.target.value)} maxLength={17} />
               </div>
               <button type="submit" className="w-full bg-black text-white py-5 font-black uppercase tracking-widest text-sm hover:bg-brand-primary transition-all shadow-[8px_8px_0px_0px_rgba(0,0,0,0.2)] text-white">Open Service Ticket</button>

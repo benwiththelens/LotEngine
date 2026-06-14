@@ -186,7 +186,7 @@ export default function VehicleInventory() {
   };
 
   const openAddTerminal = () => {
-    setFormData({ vin: "", year: "", make: "", model: "", trim: "", engine: "", drivetrain: "FWD", fuel_type: "Gasoline", ev_range: "", ev_battery: "", condition: "Good", features: [], price: "", mileage: "", status: "available", lot_location: "RECEIVING", public_description: "", exterior_color: "", interior_color: "", plate: "", state: "NE", initiate_recon: true });
+    setFormData({ vin: "", year: "", make: "", model: "", trim: "", engine: "", drivetrain: "FWD", fuel_type: "Gasoline", ev_range: "", ev_battery: "", condition: "Good", features: [], price: "", acquisition_cost: "", mileage: "", status: "available", lot_location: "RECEIVING", public_description: "", exterior_color: "", interior_color: "", plate: "", state: "NE", initiate_recon: true });
     setTerminal({ isOpen: true, mode: 'add', activeStep: 1, entryType: 'vin', id: null });
     setErrors({}); setSyncStatus('idle');
   };
@@ -352,13 +352,12 @@ export default function VehicleInventory() {
         <div className="fixed inset-0 bg-black/80 backdrop-blur-[4px] z-[100] flex items-center justify-center p-4 text-black">
           <div className="bg-white border-4 border-black w-full max-w-5xl max-h-[95vh] overflow-hidden flex flex-col shadow-[32px_32px_0px_0px_rgba(227,66,52,1)]">
             <header className="shrink-0 bg-white border-b-4 border-black p-4 md:p-8 flex justify-between items-center z-50 text-black">
-              <div className="flex items-center gap-4 mb-1">
-                  <p className="text-[10px] font-black uppercase text-brand-primary tracking-[0.2em]">{terminal.mode} Active</p>
-                  {syncStatus === 'saving' && <span className="bg-yellow-400 text-black px-2 py-0.5 text-[8px] font-black animate-pulse border border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">SYNCING...</span>}
-                  {syncStatus === 'saved' && <span className="bg-green-500 text-white px-2 py-0.5 text-[8px] font-black border border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] tracking-widest uppercase">SAVED</span>}
-                  {syncStatus === 'error' && <span className="bg-red-600 text-white px-2 py-0.5 text-[8px] font-black border border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] uppercase">SYNC ERROR</span>}
-                  {!isOnline && <span className="bg-brand-primary text-white px-2 py-0.5 text-[8px] font-black animate-pulse border border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">OFFLINE DRAFT</span>}
-              </div>
+              <div>
+                <div className="flex items-center gap-4 mb-1">
+                    <p className="text-[10px] font-black uppercase text-brand-primary tracking-[0.2em]">{terminal.mode} Active</p>
+                    {syncStatus === 'saving' && <span className="bg-yellow-400 text-black px-2 py-0.5 text-[8px] font-black animate-pulse border border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">SYNCING...</span>}
+                    {syncStatus === 'saved' && <span className="bg-green-500 text-white px-2 py-0.5 text-[8px] font-black border border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] tracking-widest uppercase">SAVED</span>}
+                    {syncStatus === 'error' && <span className="bg-red-600 text-white px-2 py-0.5 text-[8px] font-black border border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] uppercase">SYNC ERROR</span>}
                     {!isOnline && <span className="bg-brand-primary text-white px-2 py-0.5 text-[8px] font-black animate-pulse border border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] text-white">OFFLINE DRAFT</span>}
                 </div>
                 <h2 className="text-2xl md:text-4xl font-black uppercase italic tracking-tighter leading-none">{terminal.activeStep === 1 ? 'Intake Terminal' : terminal.activeStep === 3 ? 'Sync Confirmed' : `${formData.year} ${formData.make} ${formData.model}`}</h2>

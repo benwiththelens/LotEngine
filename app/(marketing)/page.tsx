@@ -48,7 +48,7 @@ function DemoTerminal() {
   }
 
   return (
-    <div className="w-full bg-zinc-900 border border-zinc-800 p-6 flex flex-col items-start gap-3 min-h-[78px] justify-center">
+    <div className="w-full bg-zinc-900 border border-zinc-800 p-6 flex flex-col items-start gap-3 min-h-[78px] justify-center text-white">
       <p className="font-mono text-[9px] text-zinc-500 font-black uppercase tracking-widest leading-none">
         // REQUEST_DEMO_ACCESS
       </p>
@@ -85,8 +85,7 @@ export default function MarketingPage() {
       title: "Pro-Grade Asset Capture",
       description: "Pro-photographer designed mobile wireframes ensure every unit is captured with technical precision. No specialized hardware required.",
       icon: <Camera size={24} className="text-[#0055FF]" />,
-      detail: "Sequential mapping engine",
-      hasPreview: true
+      detail: "Sequential mapping engine"
     },
     {
       title: "The 18% Revenue Engine",
@@ -105,8 +104,8 @@ export default function MarketingPage() {
   return (
     <div className="min-h-screen bg-[#09090b] text-white font-sans selection:bg-[#0055FF]/30">
       {/* Navigation */}
-      <nav className="border-b border-zinc-800 bg-[#09090b]/80 backdrop-blur-md sticky top-0 z-50 p-6 flex justify-between items-center">
-        <div className="flex items-center gap-4">
+      <nav className="border-b border-zinc-800 bg-[#09090b]/80 backdrop-blur-md sticky top-0 z-50 p-6 flex justify-between items-center text-white">
+        <div className="flex items-center gap-4 text-white">
             <img src="/logo.png" alt="LotEngine Logo" className="w-8 h-8 object-contain" />
             <span className="font-black uppercase tracking-tighter text-xl italic text-white">LotEngine</span>
         </div>
@@ -124,7 +123,7 @@ export default function MarketingPage() {
       </nav>
 
       {/* Hero Section */}
-      <section className="p-8 md:p-24 flex flex-col items-center text-center">
+      <section className="p-8 md:p-24 flex flex-col items-center text-center text-white">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -135,7 +134,7 @@ export default function MarketingPage() {
             <Zap size={12} className="text-[#0055FF]" />
             v0.3.0: The Multi-Tenant Update
           </div>
-          <h1 className="text-6xl md:text-8xl font-black uppercase italic tracking-tighter leading-[0.9] mb-8">
+          <h1 className="text-6xl md:text-8xl font-black uppercase italic tracking-tighter leading-[0.9] mb-8 text-white text-white">
             The Headless Dealership <br />
             <span className="text-[#0055FF]">Operating System</span>
           </h1>
@@ -181,7 +180,7 @@ export default function MarketingPage() {
             className="flex gap-20 items-center"
           >
             {marqueeItems.map((item, i) => (
-              <span key={i} className="font-mono text-xs font-black uppercase tracking-[0.8em] text-zinc-500 italic">
+              <span key={i} className="font-mono text-xs font-black uppercase tracking-[0.8em] text-zinc-500 italic text-zinc-500">
                 // {item}
               </span>
             ))}
@@ -193,7 +192,7 @@ export default function MarketingPage() {
             className="flex gap-20 items-center text-white"
           >
             {marqueeItems.map((item, i) => (
-              <span key={i} className="font-mono text-xs font-black uppercase tracking-[0.8em] text-zinc-500 italic">
+              <span key={i} className="font-mono text-xs font-black uppercase tracking-[0.8em] text-zinc-500 italic text-zinc-500">
                 // {item}
               </span>
             ))}
@@ -202,10 +201,10 @@ export default function MarketingPage() {
       </section>
 
       {/* #demo Section (Workflow) */}
-      <section id="demo" className="min-h-screen py-24 px-8 max-w-7xl mx-auto">
-        <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-4">
+      <section id="demo" className="min-h-screen py-24 px-8 max-w-7xl mx-auto text-white">
+        <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-4 text-white">
           <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-500 mb-2 text-white">System Workflow</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-500 mb-2 text-zinc-500">System Workflow</p>
             <h2 className="text-4xl md:text-6xl font-black uppercase italic tracking-tighter leading-none text-white">Operational Engine</h2>
           </div>
         </div>
@@ -218,7 +217,7 @@ export default function MarketingPage() {
               whileInView={{ opacity: 1 }}
               transition={{ duration: 0.5, delay: i * 0.2 }}
               viewport={{ once: true }}
-              className="p-12 border-r-2 border-b-2 border-zinc-800 flex flex-col justify-between group hover:bg-zinc-900/30 transition-colors"
+              className="p-12 border-r-2 border-b-2 border-zinc-800 flex flex-col justify-between group hover:bg-zinc-900/30 transition-colors text-white"
             >
               <div>
                 <div className="mb-8">{pillar.icon}</div>
@@ -226,16 +225,14 @@ export default function MarketingPage() {
                 <p className="text-zinc-500 text-sm font-medium leading-relaxed mb-12">
                   {pillar.description}
                 </p>
-                {pillar.hasPreview && (
-                  <div className="aspect-video bg-zinc-900/50 border border-zinc-800 flex items-center justify-center mb-12">
-                    <p className="font-mono text-[10px] text-zinc-500 uppercase tracking-widest text-center px-4">
-                      // ASSET_PENDING: AWAITING_RENDER_PIPELINE....
-                    </p>
-                  </div>
-                )}
+                <div className="aspect-video bg-zinc-900/50 border border-zinc-800 flex items-center justify-center mb-12">
+                  <p className="font-mono text-[10px] text-zinc-500 uppercase tracking-widest text-center px-4 leading-relaxed text-zinc-500">
+                    // ASSET_PENDING: <br />AWAITING_RENDER_PIPELINE....
+                  </p>
+                </div>
               </div>
               <div className="flex flex-col gap-4 text-white">
-                <div className="font-mono text-[8px] font-black uppercase tracking-[0.4em] text-zinc-700">INFRASTRUCTURE // {pillar.detail}</div>
+                <div className="font-mono text-[8px] font-black uppercase tracking-[0.4em] text-zinc-700 text-zinc-700">INFRASTRUCTURE // {pillar.detail}</div>
                 <div className="w-12 h-1 bg-zinc-800 group-hover:w-full group-hover:bg-[#0055FF] transition-all duration-500" />
               </div>
             </motion.div>
@@ -244,10 +241,10 @@ export default function MarketingPage() {
       </section>
 
       {/* #infrastructure Section (Pricing) */}
-      <section id="infrastructure" className="min-h-screen py-24 px-8 max-w-7xl mx-auto border-t-2 border-zinc-800">
+      <section id="infrastructure" className="min-h-screen py-24 px-8 max-w-7xl mx-auto border-t-2 border-zinc-800 text-white">
         <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-4 text-white">
           <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-500 mb-2 text-white">Pricing Protocols</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-500 mb-2 text-zinc-500">Pricing Protocols</p>
             <h2 className="text-4xl md:text-6xl font-black uppercase italic tracking-tighter leading-none text-white">Infrastructure Tiers</h2>
           </div>
         </div>
@@ -259,17 +256,17 @@ export default function MarketingPage() {
             whileInView={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5 }}
             viewport={{ once: true }}
-            className="bg-black border border-zinc-800 p-12 flex flex-col justify-between"
+            className="bg-black border border-zinc-800 p-12 flex flex-col justify-between text-white"
           >
             <div>
               <div className="flex justify-between items-start mb-8 text-white">
                 <h3 className="text-3xl font-black uppercase italic tracking-tighter text-white">The Engine</h3>
-                <div className="text-right">
+                <div className="text-right text-white">
                   <p className="font-mono text-3xl font-black text-white">$499</p>
-                  <p className="font-mono text-[10px] font-bold uppercase text-zinc-500 mt-1">/ Month</p>
+                  <p className="font-mono text-[10px] font-bold uppercase text-zinc-500 mt-1 text-zinc-500">/ Month</p>
                 </div>
               </div>
-              <p className="text-zinc-400 text-sm font-medium mb-10 leading-relaxed">The core headless operating system for rapid lot management.</p>
+              <p className="text-zinc-400 text-sm font-medium mb-10 leading-relaxed text-zinc-400">The core headless operating system for rapid lot management.</p>
               
               <ul className="space-y-4 mb-12 text-white">
                 {["Multi-Tenant Database Access", "Mobile Asset Capture Wireframe", "5-Stage Service Kanban", "Automated Syndication Kits"].map((feat) => (
@@ -291,18 +288,18 @@ export default function MarketingPage() {
             whileInView={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5 }}
             viewport={{ once: true }}
-            className="bg-black border border-zinc-800 p-12 flex flex-col justify-between relative overflow-hidden"
+            className="bg-black border border-zinc-800 p-12 flex flex-col justify-between relative overflow-hidden text-white"
           >
-            <div className="absolute top-0 right-0 bg-[#0055FF] text-white text-[8px] font-black uppercase px-3 py-1 tracking-widest italic">Enterprise</div>
+            <div className="absolute top-0 right-0 bg-[#0055FF] text-white text-[8px] font-black uppercase px-3 py-1 tracking-widest italic text-white">Enterprise</div>
             <div>
               <div className="flex justify-between items-start mb-8 text-white">
                 <h3 className="text-3xl font-black uppercase italic tracking-tighter text-white">The Custom Chassis</h3>
-                <div className="text-right text-white">
+                <div className="text-right text-white text-white">
                   <p className="font-mono text-lg font-black text-zinc-500 text-white">$4,500 Setup</p>
-                  <p className="font-mono text-3xl font-black text-white text-white">$499 <span className="text-xs font-bold text-zinc-500 uppercase tracking-tighter">/mo</span></p>
+                  <p className="font-mono text-3xl font-black text-white text-white">$499 <span className="text-xs font-bold text-zinc-500 uppercase tracking-tighter text-zinc-500">/mo</span></p>
                 </div>
               </div>
-              <p className="text-zinc-400 text-sm font-medium mb-10 leading-relaxed">Enterprise infrastructure and high-fidelity physical onboarding.</p>
+              <p className="text-zinc-400 text-sm font-medium mb-10 leading-relaxed text-zinc-400">Enterprise infrastructure and high-fidelity physical onboarding.</p>
               
               <ul className="space-y-4 mb-12 text-white">
                 {["Everything in The Engine", "Custom Next.js Storefront on Your Domain", "On-Site Workflow Integration", "Mechanic Camera Training"].map((feat) => (
@@ -321,32 +318,33 @@ export default function MarketingPage() {
       </section>
 
       {/* Footer CTA Section */}
-      <section id="deploy" className="p-8 md:p-32 text-center border-t-2 border-zinc-800 bg-[#09090b]">
+      <section id="deploy" className="p-8 md:p-32 text-center border-t-2 border-zinc-800 bg-[#09090b] text-white">
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           whileInView={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5 }}
           viewport={{ once: true }}
+          className="text-white"
         >
-          <h2 className="text-5xl md:text-8xl font-black uppercase italic tracking-tighter mb-16 text-white">
+          <h2 className="text-5xl md:text-8xl font-black uppercase italic tracking-tighter mb-16 text-white text-white">
             Ready to Deploy?
           </h2>
-          <div className="max-w-md mx-auto">
+          <div className="max-w-md mx-auto text-white">
             <DemoTerminal />
           </div>
         </motion.div>
       </section>
 
       {/* Footer */}
-      <footer className="p-12 border-t-2 border-zinc-800 bg-[#09090b]">
-        <div className="flex flex-col md:flex-row justify-between items-center gap-8 text-zinc-500">
-          <div className="flex items-center gap-4 text-white">
+      <footer className="p-12 border-t-2 border-zinc-800 bg-[#09090b] text-white">
+        <div className="flex flex-col md:flex-row justify-between items-center gap-8 text-zinc-500 text-zinc-500">
+          <div className="flex items-center gap-4 text-white text-white">
             <img src="/logo.png" alt="LotEngine Logo" className="w-6 h-6 object-contain grayscale opacity-50 hover:grayscale-0 hover:opacity-100 transition-all cursor-pointer" />
-            <span className="font-mono text-[10px] font-black uppercase tracking-widest italic text-white">LotEngine OS // v0.3.0</span>
+            <span className="font-mono text-[10px] font-black uppercase tracking-widest italic text-white text-white">LotEngine OS // v0.3.0</span>
           </div>
-          <div className="flex gap-8 font-mono text-[8px] font-black uppercase tracking-[0.5em] text-white">
+          <div className="flex gap-8 font-mono text-[8px] font-black uppercase tracking-[0.5em] text-white text-white">
             <span>© 2026 LotEngine Inc.</span>
-            <span className="text-zinc-700">Built for the Asphalt.</span>
+            <span className="text-zinc-700 text-zinc-700">Built for the Asphalt.</span>
           </div>
         </div>
       </footer>

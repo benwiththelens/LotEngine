@@ -3,6 +3,7 @@
 import { useState, useEffect, use } from "react";
 import { supabase } from "@/lib/supabase";
 import { Maximize2, Plus, CheckCircle2, Circle, Clock, Camera, MessageSquare, ArrowRight } from "lucide-react";
+import { useRouter, usePathname } from "next/navigation";
 import {
   DndContext,
   closestCorners,
@@ -425,10 +426,21 @@ function TerminalOverlay({
 
 export default function ServiceBay({ params }: { params: Promise<{ domain: string }> }) {
   const { domain: host } = use(params);
+  const pathname = usePathname();
   const [orders, setOrders] = useState<ServiceOrder[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [showIntake, setShowIntake] = useState(false);
   const [terminal, setTerminal] = useState<{ isOpen: boolean; order: ServiceOrder | null }>({ isOpen: false, order: null });
+
+  const getLink = (path: string) => {
+    if (typeof window === 'undefined') return path;
+    const hostname = window.location.hostname;
+    const isMarketingDomain = hostname === 'localhost' || hostname === 'lot-engine.com' || hostname === 'www.lot-engine.com';
+    
+    if (!isMarketingDomain) return path;
+    // Prepend domain for subpath routing on shared domains
+    return `/${host}${path === '/' ? '' : path}`;
+  };
   
   const [customerName, setCustomerName] = useState("");
   const [vehicleVin, setVehicleVin] = useState("");

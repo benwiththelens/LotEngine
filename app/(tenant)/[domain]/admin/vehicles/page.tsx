@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useMemo, use } from "react";
 import { decodeVin } from "@/lib/vin-service";
 import { lookupPlate } from "@/lib/plate-service";
 import { supabase } from "@/lib/supabase";
+import { usePathname } from "next/navigation";
 
 const COMMON_FEATURES = ["Leather", "Sunroof", "Navigation", "Bluetooth", "Backup Camera", "Heated Seats", "3rd Row", "Towing Pkg", "Apple CarPlay", "Premium Sound"];
 const DRIVETRAINS = ["FWD", "RWD", "AWD", "4x4", "4x2"];
@@ -60,6 +61,7 @@ const parseCommaString = (val: string) => {
 
 export default function VehicleInventory({ params }: { params: Promise<{ domain: string }> }) {
   const { domain: host } = use(params);
+  const pathname = usePathname();
   const [inventory, setInventory] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(true);
   const [terminal, setTerminal] = useState<TerminalState>({ isOpen: false, mode: 'add', activeStep: 1, entryType: 'vin', id: null });
@@ -67,7 +69,17 @@ export default function VehicleInventory({ params }: { params: Promise<{ domain:
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [syncStatus, setSyncStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [isOnline, setIsOnline] = useState(() => typeof window !== 'undefined' ? window.navigator.onLine : true);
-  
+
+  const getLink = (path: string) => {
+    if (typeof window === 'undefined') return path;
+    const hostname = window.location.hostname;
+    const isMarketingDomain = hostname === 'localhost' || hostname === 'lot-engine.com' || hostname === 'www.lot-engine.com';
+    
+    if (!isMarketingDomain) return path;
+    // Prepend domain for subpath routing on shared domains
+    return `/${host}${path === '/' ? '' : path}`;
+  };
+
   const [formData, setFormData] = useState<Partial<Vehicle>>({
     vin: "", year: "", make: "", model: "", trim: "", engine: "", drivetrain: "FWD",
     fuel_type: "Gasoline", ev_range: "", ev_battery: "", condition: "Good", features: [],

@@ -5,6 +5,14 @@ import { notFound } from "next/navigation";
 
 export default async function VehicleDetail({ params }: { params: Promise<{ id: string, domain: string }> }) {
   const { id, domain: host } = await params;
+  const headerList = await headers();
+  const currentHost = headerList.get("host") || "";
+  const isMarketingDomain = currentHost === 'localhost:3000' || currentHost === 'lot-engine.com' || currentHost === 'www.lot-engine.com';
+
+  const getLink = (path: string) => {
+    if (!isMarketingDomain) return path;
+    return `/${host}${path === '/' ? '' : path}`;
+  };
 
   // 1. Fetch Tenant
   let { data: tenant } = await supabase
@@ -33,10 +41,10 @@ export default async function VehicleDetail({ params }: { params: Promise<{ id: 
   return (
     <div className="min-h-screen bg-white">
       <header className="border-b-4 border-black p-6 sm:p-10 flex justify-between items-center bg-white">
-        <Link href="/" className="text-2xl font-black uppercase italic tracking-tighter hover:text-brand-primary transition-colors">
+        <Link href={getLink("/")} className="text-2xl font-black uppercase italic tracking-tighter hover:text-brand-primary transition-colors text-black">
           {tenant.business_name}
         </Link>
-        <Link href="/inventory" className="text-xs font-black uppercase tracking-widest border-b-2 border-black">
+        <Link href={getLink("/inventory")} className="text-xs font-black uppercase tracking-widest border-b-2 border-black text-black">
           ← Back to Inventory
         </Link>
       </header>

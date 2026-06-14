@@ -4,6 +4,14 @@ import Link from "next/link";
 
 export default async function PublicInventory({ params }: { params: Promise<{ domain: string }> }) {
   const { domain: host } = await params;
+  const headerList = await headers();
+  const currentHost = headerList.get("host") || "";
+  const isMarketingDomain = currentHost === 'localhost:3000' || currentHost === 'lot-engine.com' || currentHost === 'www.lot-engine.com';
+
+  const getLink = (path: string) => {
+    if (!isMarketingDomain) return path;
+    return `/${host}${path === '/' ? '' : path}`;
+  };
 
   // 1. Fetch Tenant
   let { data: tenant } = await supabase
@@ -31,14 +39,14 @@ export default async function PublicInventory({ params }: { params: Promise<{ do
   return (
     <div className="min-h-screen bg-white">
       {/* Dynamic Header */}
-      <header className="border-b-4 border-black p-6 sm:p-10 flex justify-between items-center bg-white sticky top-0 z-50">
-        <Link href="/" className="text-2xl font-black uppercase italic tracking-tighter hover:text-brand-primary transition-colors">
+      <header className="border-b-4 border-black p-6 sm:p-10 flex justify-between items-center bg-white sticky top-0 z-50 text-black">
+        <Link href={getLink("/")} className="text-2xl font-black uppercase italic tracking-tighter hover:text-brand-primary transition-colors text-black">
           {tenant.business_name}
         </Link>
-        <div className="hidden sm:flex gap-8 text-[10px] font-black uppercase tracking-widest opacity-60">
-          <Link href="/inventory" className="text-brand-primary underline decoration-2 underline-offset-4">Inventory</Link>
-          <Link href="/service" className="hover:text-black">Service Bay</Link>
-          <Link href="/about" className="hover:text-black">Our Story</Link>
+        <div className="hidden sm:flex gap-8 text-[10px] font-black uppercase tracking-widest opacity-60 text-black">
+          <Link href={getLink("/inventory")} className="text-brand-primary underline decoration-2 underline-offset-4">Inventory</Link>
+          <Link href={getLink("/service")} className="hover:text-black">Service Bay</Link>
+          <Link href={getLink("/about")} className="hover:text-black">Our Story</Link>
         </div>
       </header>
 
@@ -57,13 +65,13 @@ export default async function PublicInventory({ params }: { params: Promise<{ do
             <p className="font-black uppercase opacity-20 text-2xl italic tracking-tighter">Zero Units Detected in Showroom</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {vehicles.map((vehicle) => (
-              <Link 
-                key={vehicle.id} 
-                href={`/inventory/${vehicle.id}`}
-                className="group border-2 border-black bg-white hover:shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] hover:-translate-x-1 hover:-translate-y-1 transition-all"
-              >
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {vehicles.map((vehicle) => (
+                <Link 
+                  key={vehicle.id} 
+                  href={getLink(`/inventory/${vehicle.id}`)}
+                  className="group border-2 border-black bg-white hover:shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] hover:-translate-x-1 hover:-translate-y-1 transition-all"
+                >
                 {/* Image Placeholder */}
                 <div className="aspect-[16/10] bg-zinc-100 border-b-2 border-black flex items-center justify-center overflow-hidden">
                   <p className="text-[10px] font-black uppercase opacity-20 group-hover:opacity-40 transition-opacity italic">Asset Capture Pending</p>

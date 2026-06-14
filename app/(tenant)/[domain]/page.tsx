@@ -4,6 +4,14 @@ import Link from "next/link";
 
 export default async function Home({ params }: { params: Promise<{ domain: string }> }) {
   const { domain: host } = await params;
+  const headerList = await headers();
+  const currentHost = headerList.get("host") || "";
+  const isMarketingDomain = currentHost === 'localhost:3000' || currentHost === 'lot-engine.com' || currentHost === 'www.lot-engine.com';
+
+  const getLink = (path: string) => {
+    if (!isMarketingDomain) return path;
+    return `/${host}${path === '/' ? '' : path}`;
+  };
 
   // 1. Fetch Tenant (Robust Fallback for Vercel)
   let { data: tenant } = await supabase
@@ -54,8 +62,8 @@ export default async function Home({ params }: { params: Promise<{ domain: strin
         
         <div className="mt-16 flex flex-col sm:flex-row items-center justify-center gap-4 w-full max-w-xl">
           <Link 
-            href="/inventory"
-            className="w-full sm:w-auto text-center bg-black px-12 py-5 text-xs font-black uppercase tracking-[0.2em] text-white border-2 border-black hover:bg-zinc-900 transition-colors"
+            href={getLink("/inventory")}
+            className="w-full sm:w-auto text-center bg-black px-12 py-5 text-xs font-black uppercase tracking-[0.2em] text-white border-2 border-black hover:bg-zinc-900 transition-colors text-white"
           >
             Browse Inventory
           </Link>
@@ -84,7 +92,7 @@ export default async function Home({ params }: { params: Promise<{ domain: strin
               {vehicles.map((vehicle) => (
                 <Link 
                   key={vehicle.id} 
-                  href={`/inventory/${vehicle.id}`}
+                  href={getLink(`/inventory/${vehicle.id}`)}
                   className="group border-r-2 border-b-2 border-black bg-white hover:bg-zinc-50 transition-colors flex flex-col"
                 >
                   <div className="aspect-[16/10] border-b-2 border-black bg-zinc-100 flex items-center justify-center overflow-hidden">
@@ -128,10 +136,10 @@ export default async function Home({ params }: { params: Promise<{ domain: strin
             </div>
           )}
 
-          <div className="mt-12 text-center">
+          <div className="mt-12 text-center text-black">
             <Link 
-              href="/inventory"
-              className="inline-block text-xs font-black uppercase tracking-[0.3em] hover:translate-x-2 transition-transform"
+              href={getLink("/inventory")}
+              className="inline-block text-xs font-black uppercase tracking-[0.3em] hover:translate-x-2 transition-transform text-black"
             >
               View All Inventory —→
             </Link>

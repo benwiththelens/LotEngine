@@ -172,8 +172,8 @@ export default function MarketingPage() {
       {/* Footer */}
       <footer className="p-12 border-t-2 border-zinc-800 bg-[#09090b]">
         <div className="flex flex-col md:flex-row justify-between items-center gap-8 text-zinc-500">
-          <div className="flex items-center gap-2">
-            <div className="bg-zinc-800 text-white italic font-black text-xs px-2 py-0.5">L</div>
+          <div className="flex items-center gap-4">
+            <img src="/logo.png" alt="LotEngine Logo" className="w-6 h-6 object-contain grayscale opacity-50 hover:grayscale-0 hover:opacity-100 transition-all cursor-pointer" />
             <span className="font-mono text-[10px] font-black uppercase tracking-widest italic">LotEngine OS // v0.2.0</span>
           </div>
           <div className="flex gap-8 font-mono text-[8px] font-black uppercase tracking-[0.5em]">

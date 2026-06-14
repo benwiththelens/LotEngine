@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
+import { Maximize2, Plus, CheckCircle2, Circle } from "lucide-react";
 import {
   DndContext,
   closestCorners,
@@ -193,9 +194,10 @@ function SortableCard({ order, isOverlay = false, onExpand }: { order: ServiceOr
               e.stopPropagation();
               onExpand?.(order);
             }}
+            aria-label="Open Terminal"
             className="p-1.5 hover:bg-black hover:text-white transition-colors border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-[2px] active:translate-y-[2px]"
           >
-            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" /></svg>
+            <Maximize2 className="w-3 h-3" />
           </button>
         </div>
       </div>
@@ -213,6 +215,192 @@ function SortableCard({ order, isOverlay = false, onExpand }: { order: ServiceOr
       <div className="mt-auto flex gap-1.5 items-center">
         <div className="flex-1" />
         <p className="font-mono text-[11px] font-black leading-none bg-zinc-100 px-2 py-1 border border-black/5 shadow-sm">${(Number(order.parts_cost || 0) + Number(order.labor_cost || 0)).toLocaleString()}</p>
+      </div>
+    </div>
+  );
+}
+
+// --- Sub-Component: Terminal Overlay ---
+function TerminalOverlay({ 
+  order, 
+  onClose,
+  onUpdate
+}: { 
+  order: ServiceOrder; 
+  onClose: () => void;
+  onUpdate: (order: ServiceOrder) => void;
+}) {
+  const [checklists, setChecklists] = useState(order.checklists || []);
+  const [newStep, setNewStep] = useState("");
+
+  const updateDatabase = async (newChecklists: typeof checklists) => {
+    const { error } = await supabase.from("service_orders").update({ checklists: newChecklists }).eq("id", order.id);
+    if (!error) {
+      onUpdate({ ...order, checklists: newChecklists });
+    } else {
+      alert("Failed to save checklist: " + error.message);
+    }
+  };
+
+  const handleToggle = async (id: string) => {
+    const newChecklists = checklists.map(c => c.id === id ? { ...c, completed: !c.completed } : c);
+    setChecklists(newChecklists);
+    await updateDatabase(newChecklists);
+  };
+
+  const handleAddStep = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newStep.trim()) return;
+    const newChecklists = [...checklists, { id: Date.now().toString(), label: newStep.trim(), completed: false }];
+    setChecklists(newChecklists);
+    setNewStep("");
+    await updateDatabase(newChecklists);
+  };
+
+  const currentIndex = KANBAN_ORDER.indexOf(order.status);
+  
+  return (
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-[4px] z-[100] flex items-center justify-center p-8">
+      <div className="bg-white border-4 border-black w-full h-full max-w-7xl flex flex-col shadow-[32px_32px_0px_0px_rgba(0,0,0,1)] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        {/* Terminal Header */}
+        <header className="p-8 border-b-4 border-black flex justify-between items-center bg-zinc-50 shrink-0">
+          <div className="flex items-center gap-8">
+            <button 
+              onClick={onClose}
+              className="group flex items-center gap-2 hover:text-brand-primary transition-colors"
+            >
+              <span className="text-4xl font-black">←</span>
+              <span className="font-black uppercase tracking-widest text-xs">Exit Terminal</span>
+            </button>
+            
+            <div className="h-12 w-1 bg-black/10" />
+            
+            <div>
+              <div className="flex items-center gap-3 mb-1">
+                <h2 className="text-3xl font-black uppercase italic tracking-tighter leading-none">
+                  {order.vehicles ? `${order.vehicles.year} ${order.vehicles.make} ${order.vehicles.model}` : 'Unlinked Asset'}
+                </h2>
+                {/* Priority Badge */}
+                <div className={`px-3 py-1 text-[10px] font-black uppercase tracking-widest border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] ${
+                  order.priority === 'critical' ? 'bg-red-500 text-white' :
+                  order.priority === 'high' ? 'bg-yellow-500 text-black' :
+                  order.priority === 'standard' ? 'bg-green-500 text-white' :
+                  'bg-blue-500 text-white'
+                }`}>
+                  {order.priority}
+                </div>
+              </div>
+              <div className="flex items-center gap-4">
+                <p className="font-mono text-sm font-bold opacity-60">CUSTOMER: {order.customer_name.toUpperCase()}</p>
+                {order.requested_completion && (
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-brand-primary animate-pulse" />
+                    <p className="font-mono text-sm font-bold text-brand-primary uppercase">ETA: {new Date(order.requested_completion).toLocaleString()}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-6">
+            <div className="text-right">
+                <p className="text-[10px] font-black uppercase opacity-40 leading-none mb-1">Terminal Status</p>
+                <p className="font-mono text-sm font-black uppercase">Active Connection // {STATUS_CONFIG[order.status]?.label.toUpperCase()}</p>
+            </div>
+          </div>
+        </header>
+
+        {/* Timeline */}
+        <div className="border-b-4 border-black bg-white p-6 shrink-0">
+          <div className="flex items-center justify-between relative max-w-4xl mx-auto">
+             <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-1 bg-zinc-200 -z-10" />
+             {KANBAN_ORDER.map((statusId, index) => {
+               const config = STATUS_CONFIG[statusId];
+               const isActive = statusId === order.status;
+               const isPast = index <= currentIndex;
+               
+               return (
+                 <div key={statusId} className="flex flex-col items-center gap-2 bg-white px-4">
+                   <div className={`w-8 h-8 border-4 flex items-center justify-center transition-all duration-300 ${
+                     isActive ? 'border-brand-primary bg-brand-primary text-white scale-125 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.2)]' :
+                     isPast ? 'border-black bg-black text-white' :
+                     'border-zinc-300 bg-zinc-100 text-transparent'
+                   }`}>
+                     {isPast && !isActive && <CheckCircle2 className="w-5 h-5" />}
+                     {isActive && <div className="w-3 h-3 bg-white animate-pulse" />}
+                   </div>
+                   <span className={`text-[10px] font-black uppercase tracking-widest transition-colors ${
+                     isActive ? 'text-brand-primary' :
+                     isPast ? 'text-black' :
+                     'text-zinc-400'
+                   }`}>{config.label}</span>
+                 </div>
+               )
+             })}
+          </div>
+        </div>
+
+        {/* Main Terminal Body */}
+        <div className="flex-1 overflow-auto p-12 bg-zinc-100 flex gap-8">
+            <div className="flex-1 space-y-8 max-w-3xl">
+                {/* Checklists */}
+                <div className="bg-white border-4 border-black p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+                    <h3 className="text-xl font-black uppercase italic tracking-tighter border-b-2 border-black pb-4 mb-6">Procedure Checklist</h3>
+                    
+                    <div className="space-y-3 mb-8">
+                        {checklists.map((step) => (
+                            <div 
+                                key={step.id} 
+                                className={`flex items-center gap-4 p-4 border-2 transition-all cursor-pointer group ${
+                                    step.completed ? 'border-zinc-200 bg-zinc-50 opacity-60' : 'border-black bg-white hover:bg-zinc-50 hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-1 hover:-translate-x-1'
+                                }`}
+                                onClick={() => handleToggle(step.id)}
+                            >
+                                <button className="shrink-0 transition-transform group-hover:scale-110">
+                                    {step.completed ? (
+                                        <CheckCircle2 className="w-6 h-6 text-brand-primary" />
+                                    ) : (
+                                        <Circle className="w-6 h-6 text-zinc-300 group-hover:text-black" />
+                                    )}
+                                </button>
+                                <span className={`font-mono text-sm font-bold uppercase transition-all ${step.completed ? 'line-through text-zinc-500' : 'text-black'}`}>
+                                    {step.label}
+                                </span>
+                            </div>
+                        ))}
+                        {checklists.length === 0 && (
+                            <p className="text-sm font-mono opacity-50 italic text-center py-8">No procedures defined.</p>
+                        )}
+                    </div>
+
+                    <form onSubmit={handleAddStep} className="flex gap-2">
+                        <input
+                            type="text"
+                            value={newStep}
+                            onChange={(e) => setNewStep(e.target.value)}
+                            placeholder="ADD NEW PROCEDURE..."
+                            className="flex-1 border-2 border-black p-4 font-mono text-sm font-bold uppercase outline-none focus:border-brand-primary focus:shadow-[4px_4px_0px_0px_rgba(227,66,52,0.2)] transition-all"
+                        />
+                        <button type="submit" className="bg-black text-white px-8 py-4 hover:bg-brand-primary transition-colors flex items-center justify-center shadow-[4px_4px_0px_0px_rgba(0,0,0,0.2)] active:shadow-none active:translate-x-1 active:translate-y-1">
+                            <Plus className="w-6 h-6" />
+                        </button>
+                    </form>
+                </div>
+            </div>
+            
+            <div className="flex-1 flex flex-col gap-8">
+                {/* Notes placeholder */}
+                <div className="bg-white border-4 border-black p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex-1">
+                    <h3 className="text-xl font-black uppercase italic tracking-tighter border-b-2 border-black pb-4 mb-4">Technician Notes</h3>
+                    <textarea 
+                        className="w-full h-full min-h-[300px] border-none resize-none font-mono text-sm bg-transparent outline-none text-zinc-700" 
+                        placeholder="ENTER NOTES HERE..."
+                        value={order.technician_notes || ''}
+                        readOnly
+                    />
+                </div>
+            </div>
+        </div>
       </div>
     </div>
   );
@@ -277,6 +465,7 @@ export default function ServiceBay() {
     setActiveId(null);
     if (!over) return;
     const activeOrder = orders.find(o => o.id === active.id);
+    if (!activeOrder) return;
     const newStatus = STATUS_CONFIG[over.id] ? over.id : (orders.find(o => o.id === over.id)?.status || activeOrder.status);
 
     const { error } = await supabase.from("service_orders").update({ status: newStatus }).eq("id", active.id);
@@ -375,65 +564,14 @@ export default function ServiceBay() {
       </main>
 
       {terminal.isOpen && terminal.order && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-[4px] z-[100] flex items-center justify-center p-8">
-          <div className="bg-white border-4 border-black w-full h-full max-w-7xl flex flex-col shadow-[32px_32px_0px_0px_rgba(0,0,0,1)] overflow-hidden">
-            {/* Terminal Header */}
-            <header className="p-8 border-b-4 border-black flex justify-between items-center bg-zinc-50 shrink-0">
-              <div className="flex items-center gap-8">
-                <button 
-                  onClick={() => setTerminal({ isOpen: false, order: null })}
-                  className="group flex items-center gap-2 hover:text-brand-primary transition-colors"
-                >
-                  <span className="text-4xl font-black">←</span>
-                  <span className="font-black uppercase tracking-widest text-xs">Exit Terminal</span>
-                </button>
-                
-                <div className="h-12 w-1 bg-black/10" />
-                
-                <div>
-                  <div className="flex items-center gap-3 mb-1">
-                    <h2 className="text-3xl font-black uppercase italic tracking-tighter leading-none">
-                      {terminal.order.vehicles ? `${terminal.order.vehicles.year} ${terminal.order.vehicles.make} ${terminal.order.vehicles.model}` : 'Unlinked Asset'}
-                    </h2>
-                    {/* Priority Badge */}
-                    <div className={`px-3 py-1 text-[10px] font-black uppercase tracking-widest border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] ${
-                      terminal.order.priority === 'critical' ? 'bg-red-500 text-white' :
-                      terminal.order.priority === 'high' ? 'bg-yellow-500 text-black' :
-                      terminal.order.priority === 'standard' ? 'bg-green-500 text-white' :
-                      'bg-blue-500 text-white'
-                    }`}>
-                      {terminal.order.priority}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <p className="font-mono text-sm font-bold opacity-60">CUSTOMER: {terminal.order.customer_name.toUpperCase()}</p>
-                    {terminal.order.requested_completion && (
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-brand-primary animate-pulse" />
-                        <p className="font-mono text-sm font-bold text-brand-primary uppercase">ETA: {new Date(terminal.order.requested_completion).toLocaleString()}</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-              
-              <div className="flex items-center gap-6">
-                <div className="text-right">
-                   <p className="text-[10px] font-black uppercase opacity-40 leading-none mb-1">Terminal Status</p>
-                   <p className="font-mono text-sm font-black uppercase">Active Connection // {STATUS_CONFIG[terminal.order.status]?.label.toUpperCase()}</p>
-                </div>
-              </div>
-            </header>
-            
-            {/* Main Terminal Body */}
-            <div className="flex-1 overflow-auto p-12 bg-zinc-100">
-               {/* Content for future tasks */}
-               <div className="border-4 border-dashed border-black/10 rounded-2xl h-full flex items-center justify-center">
-                  <p className="text-2xl font-black uppercase opacity-10 tracking-[0.5em]">Terminal Interface Loaded</p>
-               </div>
-            </div>
-          </div>
-        </div>
+        <TerminalOverlay 
+          order={terminal.order} 
+          onClose={() => setTerminal({ isOpen: false, order: null })} 
+          onUpdate={(updatedOrder) => {
+            setTerminal({ isOpen: true, order: updatedOrder });
+            setOrders(prev => prev.map(o => o.id === updatedOrder.id ? updatedOrder : o));
+          }}
+        />
       )}
 
       {showIntake && (

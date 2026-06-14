@@ -24,6 +24,7 @@ interface Vehicle {
   condition: string;
   features: string[];
   price: string | number;
+  acquisition_cost: string | number;
   mileage: string | number;
   status: string;
   lot_location: string;
@@ -46,6 +47,17 @@ interface TerminalState {
   id: string | null;
 }
 
+const formatWithCommas = (val: string | number | undefined | null) => {
+  if (val === undefined || val === null || val === "") return "";
+  const clean = val.toString().replace(/,/g, "");
+  if (isNaN(Number(clean))) return val.toString();
+  return Number(clean).toLocaleString();
+};
+
+const parseCommaString = (val: string) => {
+  return val.replace(/,/g, "");
+};
+
 export default function VehicleInventory() {
   const [inventory, setInventory] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(true);
@@ -58,7 +70,7 @@ export default function VehicleInventory() {
   const [formData, setFormData] = useState<Partial<Vehicle>>({
     vin: "", year: "", make: "", model: "", trim: "", engine: "", drivetrain: "FWD",
     fuel_type: "Gasoline", ev_range: "", ev_battery: "", condition: "Good", features: [],
-    price: "", mileage: "", status: "available", lot_location: "RECEIVING",
+    price: "", acquisition_cost: "", mileage: "", status: "available", lot_location: "RECEIVING",
     public_description: "", exterior_color: "", interior_color: "",
     plate: "", state: "NE", initiate_recon: true
   });
@@ -121,9 +133,10 @@ export default function VehicleInventory() {
 
   const sanitizePayload = (data: Partial<Vehicle>) => {
     const p = { ...data };
-    const toNum = (val: string | number | undefined | null) => (val === "" || val === null || val === undefined || isNaN(Number(val))) ? null : Number(val);
+    const toNum = (val: string | number | undefined | null) => (val === "" || val === null || val === undefined || isNaN(Number(parseCommaString(val.toString())))) ? null : Number(parseCommaString(val.toString()));
     p.year = toNum(p.year); 
     p.price = toNum(p.price); 
+    p.acquisition_cost = toNum(p.acquisition_cost);
     p.mileage = toNum(p.mileage);
     p.ev_range = toNum(p.ev_range); 
     p.ev_battery = toNum(p.ev_battery);
@@ -243,6 +256,11 @@ export default function VehicleInventory() {
 
   const toggleFeature = (f: string) => setFormData((prev) => ({ ...prev, features: prev.features?.includes(f) ? prev.features.filter((x: string) => x !== f) : [...(prev.features || []), f] }));
 
+  const handleFormChange = (updates: Partial<Vehicle>) => {
+    setFormData(prev => ({ ...prev, ...updates }));
+    if (terminal.activeStep === 2) setSyncStatus('idle');
+  };
+
   async function handleDeleteAsset(id: string) {
     if (confirm("Delete Unit?")) {
       const { error } = await supabase.from("vehicles").delete().eq("id", id);
@@ -338,7 +356,7 @@ export default function VehicleInventory() {
                 <div className="flex items-center gap-4 mb-1">
                     <p className="text-[10px] font-black uppercase text-brand-primary tracking-[0.2em]">{terminal.mode} Active</p>
                     {syncStatus === 'saving' && <span className="bg-yellow-400 text-black px-2 py-0.5 text-[8px] font-black animate-pulse border border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">SYNCING...</span>}
-                    {syncStatus === 'saved' && <span className="bg-black text-white px-2 py-0.5 text-[8px] font-black border border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] tracking-widest text-white">SECURE</span>}
+                    {syncStatus === 'saved' && <span className="bg-green-500 text-white px-2 py-0.5 text-[8px] font-black border border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] tracking-widest text-white uppercase">SAVED</span>}
                     {!isOnline && <span className="bg-brand-primary text-white px-2 py-0.5 text-[8px] font-black animate-pulse border border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] text-white">OFFLINE DRAFT</span>}
                 </div>
                 <h2 className="text-2xl md:text-4xl font-black uppercase italic tracking-tighter leading-none">{terminal.activeStep === 1 ? 'Intake Terminal' : terminal.activeStep === 3 ? 'Sync Confirmed' : `${formData.year} ${formData.make} ${formData.model}`}</h2>
@@ -361,37 +379,37 @@ export default function VehicleInventory() {
                     
                     <div><p className="text-xs font-black uppercase text-brand-primary mb-6 border-b-4 border-black pb-2">01. Identity Persistence</p>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                            <div><label className="block text-[9px] font-black uppercase opacity-40 mb-1">Exterior Color*</label><input className={`w-full border-4 border-black p-4 font-black uppercase text-sm outline-none focus:ring-4 focus:ring-brand-primary/20 ${errors.exterior_color?'border-brand-primary':''}`} value={formData.exterior_color} onChange={e=>setFormData({...formData, exterior_color:e.target.value})} /></div>
-                            <div><label className="block text-[9px] font-black uppercase opacity-40 mb-1">Interior Color</label><input className="w-full border-4 border-black p-4 font-black uppercase text-sm outline-none focus:ring-4 focus:ring-brand-primary/20" value={formData.interior_color} onChange={e=>setFormData({...formData, interior_color:e.target.value})} /></div>
+                            <div><label className="block text-[9px] font-black uppercase opacity-40 mb-1">Exterior Color*</label><input className={`w-full border-4 border-black p-4 font-black uppercase text-sm outline-none focus:ring-4 focus:ring-brand-primary/20 ${errors.exterior_color?'border-brand-primary':''}`} value={formData.exterior_color} onChange={e=>handleFormChange({ exterior_color:e.target.value})} /></div>
+                            <div><label className="block text-[9px] font-black uppercase opacity-40 mb-1">Interior Color</label><input className="w-full border-4 border-black p-4 font-black uppercase text-sm outline-none focus:ring-4 focus:ring-brand-primary/20" value={formData.interior_color} onChange={e=>handleFormChange({ interior_color:e.target.value})} /></div>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-6">
-                            <div><label className="block text-[9px] font-black uppercase opacity-40 mb-1">Fuel Type</label><select className="w-full border-4 border-black p-4 font-black uppercase text-sm appearance-none bg-white text-black" value={formData.fuel_type} onChange={e=>setFormData({...formData, fuel_type:e.target.value})}><option value="">Unknown</option>{FUEL_TYPES.map(f => <option key={f} value={f}>{f}</option>)}</select></div>
-                            <div><label className="block text-[9px] font-black uppercase opacity-40 mb-1">Drivetrain</label><select className="w-full border-4 border-black p-4 font-black uppercase text-sm appearance-none bg-white text-black" value={formData.drivetrain} onChange={e=>setFormData({...formData, drivetrain:e.target.value})}><option value="">Unknown</option>{DRIVETRAINS.map(d => <option key={d} value={d}>{d}</option>)}</select></div>
+                            <div><label className="block text-[9px] font-black uppercase opacity-40 mb-1">Fuel Type</label><select className="w-full border-4 border-black p-4 font-black uppercase text-sm appearance-none bg-white text-black" value={formData.fuel_type} onChange={e=>handleFormChange({ fuel_type:e.target.value})}><option value="">Unknown</option>{FUEL_TYPES.map(f => <option key={f} value={f}>{f}</option>)}</select></div>
+                            <div><label className="block text-[9px] font-black uppercase opacity-40 mb-1">Drivetrain</label><select className="w-full border-4 border-black p-4 font-black uppercase text-sm appearance-none bg-white text-black" value={formData.drivetrain} onChange={e=>handleFormChange({ drivetrain:e.target.value})}><option value="">Unknown</option>{DRIVETRAINS.map(d => <option key={d} value={d}>{d}</option>)}</select></div>
                         </div>
                     </div>
 
                     <div><p className="text-xs font-black uppercase text-brand-primary mb-6 border-b-4 border-black pb-2">02. Pricing & Market Strategy</p>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
                             <div className="space-y-6">
-                                <div><label className="block text-[9px] font-black uppercase mb-1 opacity-40 italic">Retail Price ($)*</label><input type="number" className={`w-full border-4 border-black p-5 font-mono font-black text-3xl outline-none ${errors.price?'border-brand-primary':''}`} value={formData.price} onChange={e=>setFormData({...formData, price:e.target.value})} /></div>
-                                <div><label className="block text-[9px] font-black uppercase mb-1 opacity-40 italic">Odometer (MI)*</label><input type="number" className={`w-full border-4 border-black p-5 font-mono font-black text-3xl outline-none ${errors.mileage?'border-brand-primary':''}`} value={formData.mileage} onChange={e=>setFormData({...formData, mileage:e.target.value})} /></div>
+                                <div><label className="block text-[9px] font-black uppercase mb-1 opacity-40 italic">Retail Price ($)*</label><input type="text" className={`w-full border-4 border-black p-5 font-mono font-black text-3xl outline-none ${errors.price?'border-brand-primary':''}`} value={formatWithCommas(formData.price)} onChange={e=>handleFormChange({ price:parseCommaString(e.target.value)})} /></div>
+                                <div><label className="block text-[9px] font-black uppercase mb-1 opacity-40 italic">Odometer (MI)*</label><input type="text" className={`w-full border-4 border-black p-5 font-mono font-black text-3xl outline-none ${errors.mileage?'border-brand-primary':''}`} value={formatWithCommas(formData.mileage)} onChange={e=>handleFormChange({ mileage:parseCommaString(e.target.value)})} /></div>
                             </div>
                             <div className="space-y-6">
-                                <div><label className="block text-[9px] font-black uppercase mb-1 opacity-40 italic text-black">System Status*</label><select className="w-full border-4 border-black p-5 font-black uppercase text-xl appearance-none bg-white text-black" value={formData.status} onChange={e=>setFormData({...formData, status:e.target.value})}><option value="draft">Draft</option><option value="available">Available</option><option value="sold">Sold</option></select></div>
-                                <div><label className="block text-[9px] font-black uppercase mb-1 opacity-40 italic">Location</label><input placeholder="e.g., FRONT ROW" className="w-full border-4 border-black p-5 font-black uppercase text-xl outline-none text-black" value={formData.lot_location} onChange={e=>setFormData({...formData, lot_location:e.target.value})} /></div>
+                                <div><label className="block text-[9px] font-black uppercase mb-1 opacity-40 italic">Acquisition Cost ($)</label><input type="text" className="w-full border-4 border-black p-5 font-mono font-black text-3xl outline-none" value={formatWithCommas(formData.acquisition_cost)} onChange={e=>handleFormChange({ acquisition_cost:parseCommaString(e.target.value)})} /></div>
+                                <div><label className="block text-[9px] font-black uppercase mb-1 opacity-40 italic text-black">System Status*</label><select className="w-full border-4 border-black p-5 font-black uppercase text-xl appearance-none bg-white text-black" value={formData.status} onChange={e=>handleFormChange({ status:e.target.value})}><option value="draft">Draft</option><option value="available">Available</option><option value="sold">Sold</option></select></div>
                             </div>
                         </div>
                     </div>
                     <div><p className="text-xs font-black uppercase text-brand-primary mb-6 border-b-4 border-black pb-2 text-black">03. Condition & Recon</p>
                         <div className="space-y-8 text-black">
-                            <select className="w-full border-4 border-black p-5 font-black uppercase outline-none text-2xl appearance-none bg-white text-black" value={formData.condition} onChange={e=>setFormData({...formData, condition:e.target.value})}><option value="Excellent">Excellent - Front Line</option><option value="Good">Good - Standard</option><option value="Fair">Fair - Value Unit</option><option value="Needs Work">Needs Work</option></select>
-                            {terminal.mode === 'add' && <label className="flex items-center gap-6 cursor-pointer bg-zinc-100 p-8 border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] text-black"><input type="checkbox" className="w-12 h-12 border-4 border-black checked:bg-brand-primary appearance-none cursor-pointer" checked={formData.initiate_recon} onChange={(e) => setFormData({ ...formData, initiate_recon: e.target.checked })} /><div><p className="text-xl font-black uppercase leading-none">Auto-Initiate Recon</p><p className="text-[10px] font-bold opacity-40 mt-2 uppercase text-black">Generate Shop Floor Ticket on Finalize</p></div></label>}
+                            <select className="w-full border-4 border-black p-5 font-black uppercase outline-none text-2xl appearance-none bg-white text-black" value={formData.condition} onChange={e=>handleFormChange({ condition:e.target.value})}><option value="Excellent">Excellent - Front Line</option><option value="Good">Good - Standard</option><option value="Fair">Fair - Value Unit</option><option value="Needs Work">Needs Work</option></select>
+                            {terminal.mode === 'add' && <label className="flex items-center gap-6 cursor-pointer bg-zinc-100 p-8 border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] text-black"><input type="checkbox" className="w-12 h-12 border-4 border-black checked:bg-brand-primary appearance-none cursor-pointer" checked={formData.initiate_recon} onChange={(e) => handleFormChange({ initiate_recon: e.target.checked })} /><div><p className="text-xl font-black uppercase leading-none">Auto-Initiate Recon</p><p className="text-[10px] font-bold opacity-40 mt-2 uppercase text-black">Generate Shop Floor Ticket on Finalize</p></div></label>}
                         </div>
                     </div>
 
                     <div><p className="text-xs font-black uppercase text-brand-primary mb-6 border-b-4 border-black pb-2 text-black">04. Feature Matrix</p><div className="grid grid-cols-2 sm:grid-cols-5 gap-3 text-black">{COMMON_FEATURES.map(f => (<button key={f} onClick={() => toggleFeature(f)} className={`p-4 text-[9px] font-black uppercase border-2 border-black transition-all ${formData.features?.includes(f) ? 'bg-black text-white shadow-inner' : 'bg-white text-black opacity-30 hover:opacity-100'}`}>{f}</button>))}</div></div>
 
-                    <div><p className="text-xs font-black uppercase text-brand-primary mb-6 border-b-4 border-black pb-2 text-black">05. Strategy</p><textarea rows={6} placeholder="DESCRIBE ASSET..." className="w-full border-4 border-black p-8 font-bold text-sm outline-none shadow-inner text-black" value={formData.public_description} onChange={e=>setFormData({...formData, public_description:e.target.value})} /></div>
+                    <div><p className="text-xs font-black uppercase text-brand-primary mb-6 border-b-4 border-black pb-2 text-black">05. Strategy</p><textarea rows={6} placeholder="DESCRIBE ASSET..." className="w-full border-4 border-black p-8 font-bold text-sm outline-none shadow-inner text-black" value={formData.public_description} onChange={e=>handleFormChange({ public_description:e.target.value})} /></div>
 
                     <div className="pt-12 border-t-4 border-black/10 flex flex-col sm:flex-row gap-6 text-black">
                         <button onClick={() => commitAsset(false)} className="flex-1 bg-black text-white py-10 font-black uppercase tracking-[0.3em] shadow-2xl hover:bg-brand-primary transition-all hover:-translate-y-1 text-white">Finalize & Close</button>

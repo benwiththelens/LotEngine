@@ -50,6 +50,7 @@ CREATE TABLE IF NOT EXISTS vehicles (
     drivetrain TEXT,
     mileage INTEGER,
     price NUMERIC(12, 2),
+    acquisition_cost NUMERIC(12, 2),
     status vehicle_status DEFAULT 'draft',
     key_location TEXT,
     lot_location TEXT,

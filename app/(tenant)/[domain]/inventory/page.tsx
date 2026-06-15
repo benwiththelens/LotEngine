@@ -37,7 +37,7 @@ export default async function PublicInventory({ params }: { params: Promise<{ do
     .order("created_at", { ascending: false });
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white text-black">
       {/* Dynamic Header */}
       <header className="border-b-4 border-black p-6 sm:p-10 flex justify-between items-center bg-white sticky top-0 z-50 text-black">
         <Link href={getLink("/")} className="text-2xl font-black uppercase italic tracking-tighter hover:text-brand-primary transition-colors text-black">
@@ -69,7 +69,7 @@ export default async function PublicInventory({ params }: { params: Promise<{ do
               {vehicles.map((vehicle) => (
                 <Link 
                   key={vehicle.id} 
-                  href={getLink(`/inventory/${vehicle.id}`)}
+                  href={getLink(`/inventory/${vehicle.vin}`)}
                   className="group border-2 border-black bg-white hover:shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] hover:-translate-x-1 hover:-translate-y-1 transition-all"
                 >
                 {/* Image Placeholder */}
@@ -121,3 +121,4 @@ export default async function PublicInventory({ params }: { params: Promise<{ do
     </div>
   );
 }
+

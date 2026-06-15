@@ -2,6 +2,18 @@ import { supabase } from '@/lib/supabase';
 import { getOfflineQueue, removeFromOfflineQueue } from './indexedDB';
 
 /**
+ * ⚠️ LOTENGINE CORE INFRASTRUCTURE ⚠️
+ * OFFLINE-FIRST SYNC ENGINE
+ * 
+ * Do NOT modify this file to use standard `fetch` or direct Supabase inserts
+ * from the client UI. This platform is designed to be used deep on an asphalt lot
+ * with spotty 5G coverage.
+ * 
+ * Workflow:
+ * 1. UI captures heavy data (images) and saves to IndexedDB instantly.
+ * 2. This engine runs sequentially in the background when connectivity is detected.
+ * 3. Only upon successful Storage upload AND Database insert is the local copy purged.
+ * 
  * Processes the offline photo queue for a specific VIN, uploading assets to Supabase Storage
  * and creating database records.
  * 

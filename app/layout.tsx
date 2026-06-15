@@ -33,6 +33,20 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: "LotEngine",
     description: "The Headless Dealership Engine",
+    openGraph: {
+      images: [
+        {
+          url: '/og-image.png',
+          width: 1200,
+          height: 630,
+          alt: 'LotEngine - The Headless Dealership OS',
+        },
+      ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      images: ['/og-image.png'],
+    },
     icons: {
       icon: [
         { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },

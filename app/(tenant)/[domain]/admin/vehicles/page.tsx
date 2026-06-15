@@ -4,8 +4,10 @@ import { useState, useEffect, useCallback, useMemo, use } from "react";
 import { decodeVin } from "@/lib/vin-service";
 import { lookupPlate } from "@/lib/plate-service";
 import { supabase } from "@/lib/supabase";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { queueOfflineAction, processOfflineQueue } from "@/lib/sync-engine";
+import QuickCaptureModal from "@/components/QuickCaptureModal";
+import Link from "next/link";
 
 const COMMON_FEATURES = ["Leather", "Sunroof", "Navigation", "Bluetooth", "Backup Camera", "Heated Seats", "3rd Row", "Towing Pkg", "Apple CarPlay", "Premium Sound"];
 const DRIVETRAINS = ["FWD", "RWD", "AWD", "4x4", "4x2"];
@@ -63,9 +65,11 @@ const parseCommaString = (val: string) => {
 export default function VehicleInventory({ params }: { params: Promise<{ domain: string }> }) {
   const { domain: host } = use(params);
   const pathname = usePathname();
+  const router = useRouter();
   const [inventory, setInventory] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(true);
   const [terminal, setTerminal] = useState<TerminalState>({ isOpen: false, mode: 'add', activeStep: 1, entryType: 'vin', id: null });
+  const [isCaptureModalOpen, setIsCaptureModalOpen] = useState(false);
   const [isDecoding, setIsDecoding] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [syncStatus, setSyncStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
@@ -81,17 +85,27 @@ export default function VehicleInventory({ params }: { params: Promise<{ domain:
 
   const fetchInventory = useCallback(async () => {
     setLoading(true);
+    
+    // Auth Check: Ensure user is logged in
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      const isMarketingDomain = host === 'localhost:3000' || host === 'lot-engine.com' || host === 'www.lot-engine.com';
+      const loginPath = isMarketingDomain ? `/${host}/login` : '/login';
+      router.push(loginPath);
+      return;
+    }
+
     let { data: tenant } = await supabase.from("tenants").select("id").eq("domain", host).single();
     if (!tenant) {
       const { data: fallback } = await supabase.from("tenants").select("id").limit(1).single();
       tenant = fallback;
     }
     if (tenant) {
-      const { data } = await supabase.from("vehicles").select("*").eq("tenant_id", tenant.id).order("created_at", { ascending: false });
+      const { data } = await supabase.from("vehicles").select("*, vehicle_images(id)").eq("tenant_id", tenant.id).order("created_at", { ascending: false });
       if (data) setInventory(data as Vehicle[]);
     }
     setLoading(false);
-  }, [host]);
+  }, [host, router]);
 
   const refreshInventoryQuietly = useCallback(async () => {
     let { data: tenant } = await supabase.from("tenants").select("id").eq("domain", host).single();
@@ -99,7 +113,7 @@ export default function VehicleInventory({ params }: { params: Promise<{ domain:
       const { data: fallback } = await supabase.from("tenants").select("id").limit(1).single();
       tenant = fallback;
     }
-    const { data } = await supabase.from("vehicles").select("*").eq("tenant_id", tenant?.id).order("created_at", { ascending: false });
+    const { data } = await supabase.from("vehicles").select("*, vehicle_images(id)").eq("tenant_id", tenant?.id).order("created_at", { ascending: false });
     if (data) setInventory(data as Vehicle[]);
   }, [host]);
 
@@ -301,8 +315,14 @@ export default function VehicleInventory({ params }: { params: Promise<{ domain:
             <div><p className="text-[10px] font-black opacity-30 uppercase mb-1 text-black">Valuation</p><p className="text-lg lg:text-xl font-mono font-black italic text-black">${inventory.reduce((a, v) => a + (Number(v.price) || 0), 0).toLocaleString()}</p></div>
           </div>
         </div>
-        <div className="flex gap-4 text-black">
+        <div className="flex gap-4 text-black items-center">
           {!isOnline && <div className="flex items-center gap-2 border-4 border-yellow-400 p-2 bg-yellow-50 shadow-[4px_4px_0px_0px_rgba(250,204,21,1)] text-black"><span className="animate-ping h-2 w-2 rounded-full bg-yellow-400" /><p className="text-[9px] font-black uppercase">Offline</p></div>}
+          <button
+            onClick={() => setIsCaptureModalOpen(true)}
+            className="hidden lg:block bg-[#0055FF] text-white px-6 py-4 font-black uppercase italic text-[10px] border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
+          >
+            // INITIATE_ASSET_CAPTURE
+          </button>
           <button onClick={openAddTerminal} className="bg-black text-white px-4 py-2 md:px-6 md:py-3 lg:px-10 lg:py-4 font-black uppercase text-[10px] md:text-xs border-b-4 border-r-4 border-black/30 shadow-xl hover:bg-brand-primary transition-all text-white">Add <span className="hidden lg:inline">New </span>Unit</button>
         </div>
       </header>
@@ -311,32 +331,52 @@ export default function VehicleInventory({ params }: { params: Promise<{ domain:
         <div className="max-w-7xl mx-auto">
           {/* Mobile Card List */}
           <div className="md:hidden space-y-6">
-            {inventoryWithMetrics.map((v) => (
-              <div key={v.id} className="bg-white border-4 border-black p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
-                <p className="text-[10px] font-black uppercase text-brand-primary mb-1">VIN: {v.vin}</p>
-                <h2 className="text-2xl font-black uppercase italic leading-none mb-1">{v.year} {v.make}</h2>
-                <p className="text-xs font-bold opacity-60 uppercase mb-4">{v.model}</p>
-                
-                <div className="grid grid-cols-3 gap-2 mb-6">
-                  <div>
-                    <p className="text-[8px] font-black uppercase opacity-40">Price</p>
-                    <p className="font-mono font-black text-brand-primary">${Number(v.price || 0).toLocaleString()}</p>
-                  </div>
-                  <div>
-                    <p className="text-[8px] font-black uppercase opacity-40">Miles</p>
-                    <p className="font-mono text-[10px] font-bold">{v.mileage?.toLocaleString() || "---"}</p>
-                  </div>
-                  <div className="flex flex-col items-center">
-                    <span className={`text-[8px] font-black border-2 border-black px-2 py-0.5 uppercase ${v.status === 'available' ? 'bg-green-400' : 'bg-white'}`}>{v.status}</span>
-                  </div>
-                </div>
+            {inventoryWithMetrics.map((v) => {
+              const hasPhotos = (v as any).vehicle_images?.length > 0;
+              const isMarketingDomain = host === 'localhost:3000' || host === 'lot-engine.com' || host === 'www.lot-engine.com';
+              const getLink = (path: string) => isMarketingDomain ? `/${host}${path}` : path;
 
-                <div className="flex gap-3">
-                  <button onClick={() => openEditTerminal(v)} className="flex-1 bg-black text-white py-3 font-black uppercase text-[10px] border-b-4 border-r-4 border-black/30">Edit Unit</button>
-                  <button onClick={() => handleDeleteAsset(v.id)} className="flex-1 bg-white text-red-600 py-3 font-black uppercase text-[10px] border-4 border-black">Delete</button>
+              return (
+                <div key={v.id} className="bg-white border-4 border-black p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+                  <p className="text-[10px] font-black uppercase text-brand-primary mb-1">VIN: {v.vin}</p>
+                  <h2 className="text-2xl font-black uppercase italic leading-none mb-1">{v.year} {v.make}</h2>
+                  <p className="text-xs font-bold opacity-60 uppercase mb-4">{v.model}</p>
+                  
+                  <div className="grid grid-cols-3 gap-2 mb-6">
+                    <div>
+                      <p className="text-[8px] font-black uppercase opacity-40">Price</p>
+                      <p className="font-mono font-black text-brand-primary">${Number(v.price || 0).toLocaleString()}</p>
+                    </div>
+                    <div>
+                      <p className="text-[8px] font-black uppercase opacity-40">Miles</p>
+                      <p className="font-mono text-[10px] font-bold">{v.mileage?.toLocaleString() || "---"}</p>
+                    </div>
+                    <div className="flex flex-col items-center">
+                      <span className={`text-[8px] font-black border-2 border-black px-2 py-0.5 uppercase ${v.status === 'available' ? 'bg-green-400' : 'bg-white'}`}>{v.status}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-3">
+                    {hasPhotos ? (
+                      <span className="w-full bg-green-500 text-white py-3 font-black uppercase text-[10px] border-2 border-black opacity-50 text-center tracking-widest cursor-not-allowed">
+                        [ ASSETS DEPLOYED ]
+                      </span>
+                    ) : (
+                      <Link 
+                        href={getLink(`/inventory/${v.vin}/capture`)}
+                        className="w-full bg-[#E63946] text-white py-3 font-black uppercase text-[10px] border-b-4 border-r-4 border-black/30 text-center tracking-widest hover:brightness-110 active:translate-y-0.5 transition-all animate-pulse shadow-sm"
+                      >
+                        [ CAPTURE ASSETS ]
+                      </Link>
+                    )}
+                    <div className="flex gap-3">
+                      <button onClick={() => openEditTerminal(v)} className="flex-1 bg-black text-white py-3 font-black uppercase text-[10px] border-b-4 border-r-4 border-black/30">Edit Unit</button>
+                      <button onClick={() => handleDeleteAsset(v.id)} className="flex-1 bg-white text-red-600 py-3 font-black uppercase text-[10px] border-4 border-black">Delete</button>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* Desktop Table */}
@@ -345,12 +385,34 @@ export default function VehicleInventory({ params }: { params: Promise<{ domain:
               <thead><tr className="bg-black text-white text-[10px] font-black uppercase tracking-widest"><th className="p-3 lg:p-5 text-white">Asset</th><th className="p-3 lg:p-5 text-center text-white">Status / Age</th><th className="p-3 lg:p-5 text-center text-white text-white">Financials</th><th className="p-3 lg:p-5 text-center text-white text-white">Audit</th><th className="p-3 lg:p-5 text-right text-white">Terminal</th></tr></thead>
               <tbody className="divide-y-4 divide-zinc-50 text-black">
                 {loading ? <tr><td colSpan={5} className="p-20 text-center animate-pulse uppercase font-black text-black">Syncing...</td></tr> : inventoryWithMetrics.map((v) => {
+                  const hasPhotos = (v as any).vehicle_images?.length > 0;
+                  const isMarketingDomain = host === 'localhost:3000' || host === 'lot-engine.com' || host === 'www.lot-engine.com';
+                  const getLink = (path: string) => isMarketingDomain ? `/${host}${path}` : path;
+
                   return (
                     <tr key={v.id} className="hover:bg-zinc-50 group transition-colors text-black">
                       <td className="p-3 lg:p-5 text-black"><p className="text-[10px] font-black uppercase text-brand-primary mb-1 tracking-tighter text-brand-primary">VIN: {v.vin}</p><h2 className="text-lg lg:text-2xl font-black uppercase italic leading-none text-black">{v.year} {v.make}</h2><p className="text-[10px] lg:text-xs font-bold opacity-60 uppercase text-black">{v.model}</p></td>
                       <td className="p-3 lg:p-5 text-center text-black"><div className="flex flex-col items-center gap-1 text-black"><span className={`text-[9px] font-black border-2 border-black px-2 py-0.5 uppercase ${v.status === 'available' ? 'bg-green-400' : 'bg-white'}`}>{v.status}</span><span className={`text-[8px] font-black uppercase px-2 ${v.age && v.age > 60 ? 'bg-red-600 text-white animate-pulse' : v.age && v.age > 30 ? 'bg-yellow-400' : 'opacity-30'}`}>{v.age === 0 ? "NEW" : `${v.age} DAYS`}</span></div></td>
                       <td className="p-3 lg:p-5 text-center text-black"><p className="font-mono font-black text-lg lg:text-xl text-brand-primary leading-none text-brand-primary">${Number(v.price || 0).toLocaleString()}</p><p className="font-mono text-[10px] opacity-40 uppercase mt-1 text-black">{(Number(v.mileage) || 0).toLocaleString()} MI</p></td>
-                      <td className="p-3 lg:p-5 text-center text-black"><div className="flex flex-wrap justify-center gap-1 text-black">{v.audit.length === 0 ? <span className="text-[8px] font-black text-green-600 border px-1 uppercase">Verified</span> : v.audit.map(f => <span key={f} className="text-[8px] font-black bg-brand-primary text-white px-1 uppercase border border-black">{f}</span>)}</div></td>
+                      <td className="p-3 lg:p-5 text-center text-black">
+                        <div className="flex flex-col items-center gap-2">
+                          <div className="flex flex-wrap justify-center gap-1 text-black">
+                            {v.audit.length === 0 ? <span className="text-[8px] font-black text-green-600 border px-1 uppercase">Verified</span> : v.audit.map(f => <span key={f} className="text-[8px] font-black bg-brand-primary text-white px-1 uppercase border border-black">{f}</span>)}
+                          </div>
+                          {hasPhotos ? (
+                            <span className="text-[8px] font-black uppercase tracking-widest text-green-600 border-2 border-green-600 px-2 py-0.5 opacity-50">
+                              [ ASSETS_DEPLOYED ]
+                            </span>
+                          ) : (
+                            <Link 
+                              href={getLink(`/inventory/${v.vin}/capture`)}
+                              className="text-[8px] font-black uppercase tracking-widest text-[#E63946] border-2 border-[#E63946] px-2 py-0.5 hover:bg-[#E63946] hover:text-white transition-colors animate-pulse"
+                            >
+                              [ ASSET_PENDING ]
+                            </Link>
+                          )}
+                        </div>
+                      </td>
                       <td className="p-3 lg:p-5 text-right text-black">
                           <div className="flex justify-end gap-3 transition-opacity text-black">
                               <button onClick={() => openEditTerminal(v)} className="bg-black text-white p-3 hover:bg-brand-primary border-b-2 border-r-2 border-black/20 text-white shadow-sm"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 fill-white text-white" viewBox="0 0 20 20" fill="currentColor"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" /></svg></button>
@@ -363,6 +425,14 @@ export default function VehicleInventory({ params }: { params: Promise<{ domain:
             </table>
         </div></div>
       </main>
+
+      <QuickCaptureModal 
+        isOpen={isCaptureModalOpen} 
+        onClose={() => setIsCaptureModalOpen(false)} 
+        domain={host}
+        isMarketingDomain={host === 'localhost:3000' || host === 'lot-engine.com' || host === 'www.lot-engine.com'}
+      />
+
       {terminal.isOpen && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-[4px] z-[100] flex items-center justify-center p-4 text-black">
           <div className="bg-white border-4 border-black w-full max-w-5xl max-h-[95vh] overflow-hidden flex flex-col shadow-[32px_32px_0px_0px] shadow-brand-primary">

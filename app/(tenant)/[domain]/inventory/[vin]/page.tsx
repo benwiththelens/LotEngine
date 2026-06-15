@@ -3,8 +3,8 @@ import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-export default async function VehicleDetail({ params }: { params: Promise<{ id: string, domain: string }> }) {
-  const { id, domain: host } = await params;
+export default async function VehicleDetail({ params }: { params: Promise<{ vin: string, domain: string }> }) {
+  const { vin, domain: host } = await params;
   const headerList = await headers();
   const currentHost = headerList.get("host") || "";
   const isMarketingDomain = currentHost === 'localhost:3000' || currentHost === 'lot-engine.com' || currentHost === 'www.lot-engine.com';
@@ -28,11 +28,11 @@ export default async function VehicleDetail({ params }: { params: Promise<{ id: 
 
   if (!tenant) return notFound();
 
-  // 2. Fetch Vehicle
+  // 2. Fetch Vehicle by VIN
   const { data: vehicle } = await supabase
     .from("vehicles")
     .select("*")
-    .eq("id", id)
+    .eq("vin", vin)
     .eq("tenant_id", tenant.id)
     .single();
 
@@ -40,7 +40,7 @@ export default async function VehicleDetail({ params }: { params: Promise<{ id: 
 
   return (
     <div className="min-h-screen bg-white">
-      <header className="border-b-4 border-black p-6 sm:p-10 flex justify-between items-center bg-white">
+      <header className="border-b-4 border-black p-6 sm:p-10 flex justify-between items-center bg-white text-black">
         <Link href={getLink("/")} className="text-2xl font-black uppercase italic tracking-tighter hover:text-brand-primary transition-colors text-black">
           {tenant.business_name}
         </Link>
@@ -65,12 +65,12 @@ export default async function VehicleDetail({ params }: { params: Promise<{ id: 
 
           {/* Details */}
           <div className="flex flex-col">
-            <div className="mb-8">
+            <div className="mb-8 text-black">
               <p className="text-[10px] font-black uppercase tracking-[0.4em] text-brand-primary mb-2">Technical Specifications</p>
-              <h1 className="text-6xl font-black uppercase italic tracking-tighter leading-[0.85] mb-4">
+              <h1 className="text-6xl font-black uppercase italic tracking-tighter leading-[0.85] mb-4 text-black">
                 {vehicle.year} {vehicle.make}<br />{vehicle.model}
               </h1>
-              <p className="text-xl font-bold uppercase opacity-40 italic tracking-tight">{vehicle.trim}</p>
+              <p className="text-xl font-bold uppercase opacity-40 italic tracking-tight text-black">{vehicle.trim}</p>
             </div>
 
             <div className="bg-black text-white p-8 mb-12 shadow-[12px_12px_0px_0px] shadow-brand-primary">
@@ -87,7 +87,7 @@ export default async function VehicleDetail({ params }: { params: Promise<{ id: 
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-y-8 gap-x-12 border-t-4 border-black pt-8">
+            <div className="grid grid-cols-2 gap-y-8 gap-x-12 border-t-4 border-black pt-8 text-black">
               <div>
                 <p className="text-[10px] font-black uppercase opacity-40 mb-1 tracking-widest">Mileage</p>
                 <p className="text-lg font-mono font-bold">{vehicle.mileage ? `${vehicle.mileage.toLocaleString()} MI` : "EXEMPT"}</p>
@@ -106,7 +106,7 @@ export default async function VehicleDetail({ params }: { params: Promise<{ id: 
               </div>
             </div>
 
-            <div className="mt-12 p-8 bg-zinc-50 border-2 border-black/5">
+            <div className="mt-12 p-8 bg-zinc-50 border-2 border-black/5 text-black">
               <p className="text-[10px] font-black uppercase tracking-widest opacity-40 mb-4">Mechanic Notes</p>
               <p className="text-sm font-bold leading-relaxed">
                 {vehicle.public_description || "This vehicle has been processed through the LotEngine digital twin pipeline and is awaiting final inspection notes."}

@@ -1,5 +1,16 @@
 import { openDB, DBSchema, IDBPDatabase } from 'idb';
 
+/**
+ * ⚠️ LOTENGINE CORE INFRASTRUCTURE ⚠️
+ * LOCAL PERSISTENCE LAYER
+ * 
+ * This file wraps the `idb` library to provide an asynchronous, offline-first queue
+ * for the Capture Terminal. It allows mechanics to shoot 20+ photos in a concrete service bay
+ * without dropping data.
+ * 
+ * Do not replace this with `localStorage` (size limits) or `sessionStorage` (volatility).
+ */
+
 // Define the payload interface for strict typing
 export interface PhotoPayload {
   id?: number; // Auto-incremented by IndexedDB

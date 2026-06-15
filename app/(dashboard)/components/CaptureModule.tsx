@@ -1,7 +1,10 @@
 "use client";
 
-import React, { useState, useRef, useMemo } from 'react';
-import { Camera, Upload, CheckCircle2, ChevronDown, ChevronUp } from 'lucide-react';
+import React, { useState, useRef, useMemo, useEffect } from 'react';
+import { Camera, Upload, CheckCircle2, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
+import { generateProxy } from '@/utils/compressImage';
+import { saveToOfflineQueue, getOfflineQueue } from '@/utils/indexedDB';
+import { processPayload } from '@/utils/syncEngine';
 
 interface Shot {
   id: string;
@@ -52,11 +55,28 @@ export default function CaptureModule({ vin, mode, tenantBrandColor = '#0047AB' 
   
   const [capturedShots, setCapturedShots] = useState<Record<string, string>>({});
   const [expandedId, setExpandedId] = useState<string | null>(shots[0]?.id || null);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncProgress, setSyncProgress] = useState({ current: 0, total: 0 });
   
   const isComplete = useMemo(() => shots.every(s => capturedShots[s.id]), [shots, capturedShots]);
 
+  // Load existing queued assets from IndexedDB on mount
+  useEffect(() => {
+    const loadQueue = async () => {
+      const pending = await getOfflineQueue(vin);
+      const updates: Record<string, string> = {};
+      pending.forEach(item => {
+        if (item.mode === mode) {
+          updates[item.angle_id] = URL.createObjectURL(item.blob);
+        }
+      });
+      setCapturedShots(prev => ({ ...prev, ...updates }));
+    };
+    loadQueue();
+  }, [vin, mode]);
+
   // The Observer Effect for Auto-Advance
-  React.useEffect(() => {
+  useEffect(() => {
     const nextUncaptured = shots.find(shot => !capturedShots[shot.id]);
     if (nextUncaptured) {
       setExpandedId(nextUncaptured.id);
@@ -68,11 +88,45 @@ export default function CaptureModule({ vin, mode, tenantBrandColor = '#0047AB' 
     }
   }, [capturedShots, shots]);
 
-  const handleCapture = (id: string, e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCapture = async (id: string, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const url = URL.createObjectURL(file);
-      setCapturedShots(prev => ({ ...prev, [id]: url }));
+      try {
+        // 1. Compress for Web
+        const compressed = await generateProxy(file);
+        
+        // 2. Save to Offline Queue
+        await saveToOfflineQueue({
+          vin,
+          angle_id: id,
+          mode,
+          blob: compressed
+        });
+
+        // 3. Update Preview
+        const url = URL.createObjectURL(compressed);
+        setCapturedShots(prev => ({ ...prev, [id]: url }));
+      } catch (err) {
+        console.error("CAPTURE_FAILURE:", err);
+      }
+    }
+  };
+
+  const handleSync = async () => {
+    if (!isComplete || isSyncing) return;
+    
+    setIsSyncing(true);
+    try {
+      await processPayload(vin, (current, total) => {
+        setSyncProgress({ current, total });
+      });
+      // Optional: Redirect or show success state
+      alert("// PAYLOAD_TRANSMITTED_SUCCESSFULLY");
+    } catch (err) {
+      console.error("SYNC_FAILURE:", err);
+      alert("// TRANSMISSION_ERROR");
+    } finally {
+      setIsSyncing(false);
     }
   };
 
@@ -204,14 +258,20 @@ export default function CaptureModule({ vin, mode, tenantBrandColor = '#0047AB' 
       <div className="fixed bottom-0 left-0 right-0 p-6 md:p-8 bg-white/90 backdrop-blur-md border-t-4 border-black z-[100]">
         <div className="max-w-4xl mx-auto">
             <button
-                disabled={!isComplete}
+                onClick={handleSync}
+                disabled={!isComplete || isSyncing}
                 className={`w-full py-6 md:py-8 font-black uppercase tracking-[0.4em] italic text-sm md:text-lg border-b-8 border-r-8 transition-all relative overflow-hidden ${
-                    isComplete 
+                    isComplete && !isSyncing
                     ? 'bg-[var(--tenant-accent)] border-black text-white shadow-2xl hover:-translate-y-1 active:translate-y-1 active:border-b-4 active:border-r-4' 
                     : 'bg-black border-black text-white cursor-not-allowed border-b-8 border-r-8 opacity-[0.85]'
                 }`}
             >
-                {isComplete ? (
+                {isSyncing ? (
+                    <span className="flex items-center justify-center gap-4 text-white">
+                        <Loader2 className="w-6 h-6 text-white animate-spin" />
+                        SYNCING_ASSETS ({syncProgress.current}/{syncProgress.total})
+                    </span>
+                ) : isComplete ? (
                     <span className="flex items-center justify-center gap-4 text-white">
                         <CheckCircle2 className="w-6 h-6 text-white" />
                         TRANSMIT_INVENTORY_PAYLOAD

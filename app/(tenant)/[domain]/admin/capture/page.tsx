@@ -1,7 +1,7 @@
 "use client";
 
 import { use, useState } from "react";
-import CaptureModule from "@/app/(dashboard)/components/CaptureModule";
+import CaptureModule from "@/components/CaptureModule";
 
 export default function CapturePage({ params }: { params: Promise<{ domain: string }> }) {
   const { domain } = use(params);
@@ -15,13 +15,13 @@ export default function CapturePage({ params }: { params: Promise<{ domain: stri
           onClick={() => setMode('intake')}
           className={`px-4 py-1 font-black uppercase text-[10px] transition-all ${mode === 'intake' ? 'bg-[#0047AB] text-white' : 'text-zinc-500 hover:text-white'}`}
         >
-          // INTAKE_PROTOCOL
+          {"// INTAKE_PROTOCOL"}
         </button>
         <button 
           onClick={() => setMode('retail')}
           className={`px-4 py-1 font-black uppercase text-[10px] transition-all ${mode === 'retail' ? 'bg-[#0047AB] text-white' : 'text-zinc-500 hover:text-white'}`}
         >
-          // RETAIL_PROTOCOL
+          {"// RETAIL_PROTOCOL"}
         </button>
       </div>
 

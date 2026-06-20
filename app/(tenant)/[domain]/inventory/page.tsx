@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase-server";
 import Link from "next/link";
+import { getLink as getLinkUtil } from "@/lib/getLink";
 
 export default async function PublicInventory({ params }: { params: Promise<{ domain: string }> }) {
   const { domain: host } = await params;
@@ -8,10 +9,9 @@ export default async function PublicInventory({ params }: { params: Promise<{ do
   const currentHost = headerList.get("host") || "";
   const isMarketingDomain = currentHost === 'localhost:3000' || currentHost === 'lot-engine.com' || currentHost === 'www.lot-engine.com';
 
-  const getLink = (path: string) => {
-    if (!isMarketingDomain) return path;
-    return `/${host}${path === '/' ? '' : path}`;
-  };
+  const getLink = (path: string) => getLinkUtil(path, host, isMarketingDomain);
+
+  const supabase = await createClient();
 
   // 1. Fetch Tenant
   let { data: tenant } = await supabase
@@ -21,7 +21,11 @@ export default async function PublicInventory({ params }: { params: Promise<{ do
     .single();
 
   if (!tenant) {
-    const { data: fallback } = await supabase.from("tenants").select("*").limit(1).single();
+    let { data: fallback } = await supabase.from("tenants").select("*").eq("domain", "localhost:3000").single();
+    if (!fallback) {
+      const { data: firstTenant } = await supabase.from("tenants").select("*").limit(1).single();
+      fallback = firstTenant;
+    }
     tenant = fallback;
   }
 
@@ -30,7 +34,12 @@ export default async function PublicInventory({ params }: { params: Promise<{ do
   // 2. Fetch Inventory
   const { data: vehicles } = await supabase
     .from("vehicles")
-    .select("*")
+    .select(`
+      *,
+      vehicle_images (
+        storage_url
+      )
+    `)
     .eq("tenant_id", tenant.id)
     .eq("is_inventory", true)
     .eq("status", "available")
@@ -72,9 +81,17 @@ export default async function PublicInventory({ params }: { params: Promise<{ do
                   href={getLink(`/inventory/${vehicle.vin}`)}
                   className="group border-2 border-black bg-white hover:shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] hover:-translate-x-1 hover:-translate-y-1 transition-all"
                 >
-                {/* Image Placeholder */}
+                {/* Vehicle Image Thumbnail */}
                 <div className="aspect-[16/10] bg-zinc-100 border-b-2 border-black flex items-center justify-center overflow-hidden">
-                  <p className="text-[10px] font-black uppercase opacity-20 group-hover:opacity-40 transition-opacity italic">Asset Capture Pending</p>
+                  {vehicle.vehicle_images?.[0]?.storage_url ? (
+                    <img 
+                      src={vehicle.vehicle_images[0].storage_url} 
+                      alt={`${vehicle.year} ${vehicle.make}`} 
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-350"
+                    />
+                  ) : (
+                    <p className="text-[10px] font-black uppercase opacity-20 group-hover:opacity-40 transition-opacity italic">Asset Capture Pending</p>
+                  )}
                 </div>
 
                 <div className="p-6">

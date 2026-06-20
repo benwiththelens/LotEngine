@@ -41,7 +41,7 @@ function DemoTerminal() {
     return (
       <div className="w-full bg-zinc-900 border border-zinc-800 p-6 flex items-center justify-center min-h-[78px]">
         <p className="font-mono text-[10px] text-[#0055FF] font-black uppercase tracking-[0.2em] animate-pulse">
-          // REQUEST_RECEIVED: CHECK_YOUR_INBOX_SHORTLY
+          {"// REQUEST_RECEIVED: CHECK_YOUR_INBOX_SHORTLY"}
         </p>
       </div>
     );
@@ -50,7 +50,7 @@ function DemoTerminal() {
   return (
     <div className="w-full bg-zinc-900 border border-zinc-800 p-6 flex flex-col items-start gap-3 min-h-[78px] justify-center text-white">
       <p className="font-mono text-[9px] text-zinc-500 font-black uppercase tracking-widest leading-none">
-        // REQUEST_DEMO_ACCESS
+        {"// REQUEST_DEMO_ACCESS"}
       </p>
       <form onSubmit={handleSubmit} className="w-full flex items-center gap-2">
         <span className="font-mono text-xs font-black text-[#0055FF]">{'>'}</span>
@@ -181,7 +181,7 @@ export default function MarketingPage() {
           >
             {marqueeItems.map((item, i) => (
               <span key={i} className="font-mono text-xs font-black uppercase tracking-[0.8em] text-zinc-500 italic text-zinc-500">
-                // {item}
+                {"// "}{item}
               </span>
             ))}
           </motion.div>
@@ -193,7 +193,7 @@ export default function MarketingPage() {
           >
             {marqueeItems.map((item, i) => (
               <span key={i} className="font-mono text-xs font-black uppercase tracking-[0.8em] text-zinc-500 italic text-zinc-500">
-                // {item}
+                {"// "}{item}
               </span>
             ))}
           </motion.div>
@@ -227,12 +227,12 @@ export default function MarketingPage() {
                 </p>
                 <div className="aspect-video bg-zinc-900/50 border border-zinc-800 flex items-center justify-center mb-12 text-white">
                   <p className="font-mono text-[10px] text-zinc-500 uppercase tracking-widest text-center px-4 leading-relaxed text-zinc-500">
-                    // ASSET_PENDING: <br />AWAITING_RENDER_PIPELINE....
+                    {"// ASSET_PENDING: "} <br /> {"AWAITING_RENDER_PIPELINE...."}
                   </p>
                 </div>
               </div>
               <div className="flex flex-col gap-4 text-white text-white">
-                <div className="font-mono text-[8px] font-black uppercase tracking-[0.4em] text-zinc-700 text-zinc-700">INFRASTRUCTURE // {pillar.detail}</div>
+                <div className="font-mono text-[8px] font-black uppercase tracking-[0.4em] text-zinc-700 text-zinc-700">{"INFRASTRUCTURE // "}{pillar.detail}</div>
                 <div className="w-12 h-1 bg-zinc-800 group-hover:w-full group-hover:bg-[#0055FF] transition-all duration-500" />
               </div>
             </motion.div>

@@ -2,8 +2,11 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/lib/supabase-browser';
+import { getLink as getLinkUtil } from '@/lib/getLink';
 import { X } from 'lucide-react';
+
+const supabase = createClient();
 
 interface QuickCaptureModalProps {
   isOpen: boolean;
@@ -20,10 +23,7 @@ export default function QuickCaptureModal({ isOpen, onClose, domain, isMarketing
 
   if (!isOpen) return null;
 
-  const getLink = (path: string) => {
-    if (!isMarketingDomain) return path;
-    return `/${domain}${path === '/' ? '' : path}`;
-  };
+  const getLink = (path: string) => getLinkUtil(path, domain, isMarketingDomain);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

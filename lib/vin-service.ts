@@ -19,12 +19,17 @@ export async function decodeVin(vin: string) {
   // Helper to find value by Variable name
   const getVal = (name: string) => results.find((r: { Variable: string; Value: string | null }) => r.Variable === name)?.Value;
 
+  const displacement = getVal("Displacement (L)");
+  const cylinders = getVal("Engine Number of Cylinders");
+
   return {
     year: parseInt(getVal("Model Year") || "0"),
     make: getVal("Make"),
     model: getVal("Model"),
     trim: getVal("Trim"),
-    engine: `${getVal("Displacement (L)")}L ${getVal("Engine Number of Cylinders")}cyl`,
+    engine: displacement && cylinders
+      ? `${displacement}L ${cylinders}cyl`
+      : getVal("Engine Model") || null,
     drivetrain: getVal("Drive Type"),
     bodyClass: getVal("Body Class"),
     fuelType: getVal("Fuel Type - Primary"),

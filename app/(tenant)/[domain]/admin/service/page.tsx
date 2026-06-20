@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useEffect, use, useCallback } from "react";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase-browser";
 import { Maximize2, Plus, CheckCircle2, Circle, Clock, Camera, MessageSquare, ArrowRight } from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
+
+const supabase = createClient();
 import { queueOfflineAction, processOfflineQueue } from "@/lib/sync-engine";
 import {
   DndContext,
@@ -553,7 +555,11 @@ export default function ServiceBay({ params }: { params: Promise<{ domain: strin
   async function fetchOrders() {
     let { data: tenant } = await supabase.from("tenants").select("id").eq("domain", host).single();
     if (!tenant) {
-      const { data: fallback } = await supabase.from("tenants").select("id").limit(1).single();
+      let { data: fallback } = await supabase.from("tenants").select("id").eq("domain", "localhost:3000").single();
+      if (!fallback) {
+        const { data: firstTenant } = await supabase.from("tenants").select("id").limit(1).single();
+        fallback = firstTenant;
+      }
       tenant = fallback;
     }
     if (tenant) {
@@ -615,7 +621,11 @@ export default function ServiceBay({ params }: { params: Promise<{ domain: strin
     e.preventDefault();
     let { data: tenant } = await supabase.from("tenants").select("id").eq("domain", host).single();
     if (!tenant) {
-      const { data: fallback } = await supabase.from("tenants").select("id").limit(1).single();
+      let { data: fallback } = await supabase.from("tenants").select("id").eq("domain", "localhost:3000").single();
+      if (!fallback) {
+        const { data: firstTenant } = await supabase.from("tenants").select("id").limit(1).single();
+        fallback = firstTenant;
+      }
       tenant = fallback;
     }
     if (!tenant) return;

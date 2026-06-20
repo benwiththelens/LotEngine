@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, JetBrains_Mono } from "next/font/google";
 import { headers } from "next/headers";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase-server";
 import { Analytics } from "@vercel/analytics/react";
 import "./globals.css";
 
@@ -18,6 +18,7 @@ const jetBrainsMono = JetBrains_Mono({
 export async function generateMetadata(): Promise<Metadata> {
   const headerList = await headers();
   const host = headerList.get("host") || "lot-engines.com";
+  const supabase = await createClient();
   
   let { data: tenant } = await supabase
     .from("tenants")
@@ -71,6 +72,7 @@ export default async function RootLayout({
 }>) {
   const headerList = await headers();
   const host = headerList.get("host") || "lot-engines.com";
+  const supabase = await createClient();
 
   // Fetch tenant data for dynamic branding
   let { data: tenant } = await supabase
@@ -89,6 +91,7 @@ export default async function RootLayout({
       tenant = {
         color_primary: "#0047AB",
         color_background: "#FFFFFF"
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any;
     } else {
       const { data: fallback } = await supabase.from("tenants").select("*").limit(1).single();

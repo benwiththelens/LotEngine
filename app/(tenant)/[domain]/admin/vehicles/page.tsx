@@ -3,11 +3,14 @@
 import { useState, useEffect, useCallback, useMemo, use } from "react";
 import { decodeVin } from "@/lib/vin-service";
 import { lookupPlate } from "@/lib/plate-service";
-import { supabase } from "@/lib/supabase";
-import { usePathname, useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase-browser";
+import { getLink as getLinkUtil } from "@/lib/getLink";
+import { useRouter } from "next/navigation";
 import { queueOfflineAction, processOfflineQueue } from "@/lib/sync-engine";
 import QuickCaptureModal from "@/components/QuickCaptureModal";
 import Link from "next/link";
+
+const supabase = createClient();
 
 const COMMON_FEATURES = ["Leather", "Sunroof", "Navigation", "Bluetooth", "Backup Camera", "Heated Seats", "3rd Row", "Towing Pkg", "Apple CarPlay", "Premium Sound"];
 const DRIVETRAINS = ["FWD", "RWD", "AWD", "4x4", "4x2"];
@@ -41,6 +44,7 @@ interface Vehicle {
   plate?: string;
   state?: string;
   initiate_recon?: boolean;
+  vehicle_images?: Array<{ id: string }>;
 }
 
 interface TerminalState {
@@ -64,7 +68,8 @@ const parseCommaString = (val: string) => {
 
 export default function VehicleInventory({ params }: { params: Promise<{ domain: string }> }) {
   const { domain: host } = use(params);
-  const pathname = usePathname();
+  const isMarketingDomain = host === 'localhost:3000' || host === 'lot-engine.com' || host === 'www.lot-engine.com';
+  const getLink = (path: string) => getLinkUtil(path, host, isMarketingDomain);
   const router = useRouter();
   const [inventory, setInventory] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(true);
@@ -97,7 +102,11 @@ export default function VehicleInventory({ params }: { params: Promise<{ domain:
 
     let { data: tenant } = await supabase.from("tenants").select("id").eq("domain", host).single();
     if (!tenant) {
-      const { data: fallback } = await supabase.from("tenants").select("id").limit(1).single();
+      let { data: fallback } = await supabase.from("tenants").select("id").eq("domain", "localhost:3000").single();
+      if (!fallback) {
+        const { data: firstTenant } = await supabase.from("tenants").select("id").limit(1).single();
+        fallback = firstTenant;
+      }
       tenant = fallback;
     }
     if (tenant) {
@@ -110,7 +119,11 @@ export default function VehicleInventory({ params }: { params: Promise<{ domain:
   const refreshInventoryQuietly = useCallback(async () => {
     let { data: tenant } = await supabase.from("tenants").select("id").eq("domain", host).single();
     if (!tenant) {
-      const { data: fallback } = await supabase.from("tenants").select("id").limit(1).single();
+      let { data: fallback } = await supabase.from("tenants").select("id").eq("domain", "localhost:3000").single();
+      if (!fallback) {
+        const { data: firstTenant } = await supabase.from("tenants").select("id").limit(1).single();
+        fallback = firstTenant;
+      }
       tenant = fallback;
     }
     const { data } = await supabase.from("vehicles").select("*, vehicle_images(id)").eq("tenant_id", tenant?.id).order("created_at", { ascending: false });
@@ -166,8 +179,8 @@ export default function VehicleInventory({ params }: { params: Promise<{ domain:
     delete p.state; 
     delete p.initiate_recon; 
     delete p.id;
-    delete (p as any).age;
-    delete (p as any).audit;
+    delete (p as Record<string, unknown>).age;
+    delete (p as Record<string, unknown>).audit;
     
     if (p.vin) p.vin = p.vin.toUpperCase();
     return p;
@@ -238,7 +251,11 @@ export default function VehicleInventory({ params }: { params: Promise<{ domain:
       if (terminal.mode === 'add') {
         let { data: tenant } = await supabase.from("tenants").select("id").eq("domain", host).single();
         if (!tenant) {
-          const { data: fallback } = await supabase.from("tenants").select("id").limit(1).single();
+          let { data: fallback } = await supabase.from("tenants").select("id").eq("domain", "localhost:3000").single();
+          if (!fallback) {
+            const { data: firstTenant } = await supabase.from("tenants").select("id").limit(1).single();
+            fallback = firstTenant;
+          }
           tenant = fallback;
         }
         const { data: { user } } = await supabase.auth.getUser();
@@ -274,7 +291,11 @@ export default function VehicleInventory({ params }: { params: Promise<{ domain:
       if (terminal.mode === 'add' && formData.initiate_recon) {
         let { data: tenant } = await supabase.from("tenants").select("id").eq("domain", host).single();
         if (!tenant) {
-          const { data: fallback } = await supabase.from("tenants").select("id").limit(1).single();
+          let { data: fallback } = await supabase.from("tenants").select("id").eq("domain", "localhost:3000").single();
+          if (!fallback) {
+            const { data: firstTenant } = await supabase.from("tenants").select("id").limit(1).single();
+            fallback = firstTenant;
+          }
           tenant = fallback;
         }
         await supabase.from("service_orders").insert({ tenant_id: tenant?.id, vehicle_id: terminal.id, customer_name: "INTERNAL RECON", status: "intake", is_internal_recon: true });
@@ -321,7 +342,7 @@ export default function VehicleInventory({ params }: { params: Promise<{ domain:
             onClick={() => setIsCaptureModalOpen(true)}
             className="hidden lg:block bg-[#0055FF] text-white px-6 py-4 font-black uppercase italic text-[10px] border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
           >
-            // INITIATE_ASSET_CAPTURE
+            {"// INITIATE_ASSET_CAPTURE"}
           </button>
           <button onClick={openAddTerminal} className="bg-black text-white px-4 py-2 md:px-6 md:py-3 lg:px-10 lg:py-4 font-black uppercase text-[10px] md:text-xs border-b-4 border-r-4 border-black/30 shadow-xl hover:bg-brand-primary transition-all text-white">Add <span className="hidden lg:inline">New </span>Unit</button>
         </div>
@@ -332,9 +353,7 @@ export default function VehicleInventory({ params }: { params: Promise<{ domain:
           {/* Mobile Card List */}
           <div className="md:hidden space-y-6">
             {inventoryWithMetrics.map((v) => {
-              const hasPhotos = (v as any).vehicle_images?.length > 0;
-              const isMarketingDomain = host === 'localhost:3000' || host === 'lot-engine.com' || host === 'www.lot-engine.com';
-              const getLink = (path: string) => isMarketingDomain ? `/${host}${path}` : path;
+              const hasPhotos = (v.vehicle_images?.length ?? 0) > 0;
 
               return (
                 <div key={v.id} className="bg-white border-4 border-black p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
@@ -385,9 +404,7 @@ export default function VehicleInventory({ params }: { params: Promise<{ domain:
               <thead><tr className="bg-black text-white text-[10px] font-black uppercase tracking-widest"><th className="p-3 lg:p-5 text-white">Asset</th><th className="p-3 lg:p-5 text-center text-white">Status / Age</th><th className="p-3 lg:p-5 text-center text-white text-white">Financials</th><th className="p-3 lg:p-5 text-center text-white text-white">Audit</th><th className="p-3 lg:p-5 text-right text-white">Terminal</th></tr></thead>
               <tbody className="divide-y-4 divide-zinc-50 text-black">
                 {loading ? <tr><td colSpan={5} className="p-20 text-center animate-pulse uppercase font-black text-black">Syncing...</td></tr> : inventoryWithMetrics.map((v) => {
-                  const hasPhotos = (v as any).vehicle_images?.length > 0;
-                  const isMarketingDomain = host === 'localhost:3000' || host === 'lot-engine.com' || host === 'www.lot-engine.com';
-                  const getLink = (path: string) => isMarketingDomain ? `/${host}${path}` : path;
+                  const hasPhotos = (v.vehicle_images?.length ?? 0) > 0;
 
                   return (
                     <tr key={v.id} className="hover:bg-zinc-50 group transition-colors text-black">

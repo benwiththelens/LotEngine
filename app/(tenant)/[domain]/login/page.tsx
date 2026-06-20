@@ -1,8 +1,11 @@
 "use client";
 
 import { useState, use, Suspense } from "react";
-import { supabase } from "@/lib/supabase";
-import { useRouter, usePathname, useSearchParams } from "next/navigation";
+import { createClient } from "@/lib/supabase-browser";
+import { getLink as getLinkUtil } from "@/lib/getLink";
+import { useRouter, useSearchParams } from "next/navigation";
+
+const supabase = createClient();
 
 function LoginContent({ host }: { host: string }) {
   const [email, setEmail] = useState("");
@@ -16,9 +19,7 @@ function LoginContent({ host }: { host: string }) {
     if (typeof window === 'undefined') return path;
     const hostname = window.location.hostname;
     const isMarketingDomain = hostname === 'localhost' || hostname === 'lot-engine.com' || hostname === 'www.lot-engine.com';
-    
-    if (!isMarketingDomain) return path;
-    return `/${host}${path === '/' ? '' : path}`;
+    return getLinkUtil(path, host, isMarketingDomain);
   };
 
   async function handleLogin(e: React.FormEvent) {
@@ -35,11 +36,9 @@ function LoginContent({ host }: { host: string }) {
       setMessage({ type: 'error', text: error.message.toUpperCase() });
     } else {
       const next = searchParams.get('next');
-      if (next) {
-        router.push(getLink(next));
-      } else {
-        router.push(getLink("/admin/vehicles"));
-      }
+      // Validate `next` is a relative path to prevent open redirect attacks
+      const safePath = next && next.startsWith('/') ? next : '/admin/vehicles';
+      router.push(getLink(safePath));
     }
     setLoading(false);
   }
@@ -54,7 +53,9 @@ function LoginContent({ host }: { host: string }) {
     setMessage(null);
 
     const next = searchParams.get('next');
-    const redirectPath = next ? getLink(next) : getLink("/admin/vehicles");
+    // Validate `next` is a relative path to prevent open redirect attacks
+    const safePath = next && next.startsWith('/') ? next : '/admin/vehicles';
+    const redirectPath = getLink(safePath);
 
     const { error } = await supabase.auth.signInWithOtp({
       email,
@@ -129,7 +130,7 @@ function LoginContent({ host }: { host: string }) {
             disabled={loading}
             className="font-mono text-zinc-500 text-[10px] font-bold uppercase tracking-[0.3em] hover:text-white transition-colors"
           >
-            // Request Secure Link
+            {"// Request Secure Link"}
           </button>
         </div>
       </form>

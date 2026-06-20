@@ -1,4 +1,6 @@
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/lib/supabase-browser';
+
+const supabase = createClient();
 import { getOfflineQueue, removeFromOfflineQueue } from './indexedDB';
 
 /**
@@ -30,9 +32,20 @@ export async function processPayload(
   const totalFiles = pendingPhotos.length;
   if (totalFiles === 0) return; // Nothing to process
 
+  // 2. Look up the vehicle ID once before the loop — not on every photo
+  const { data: vehicle, error: vehicleError } = await supabase
+    .from('vehicles')
+    .select('id')
+    .eq('vin', vin)
+    .single();
+
+  if (vehicleError || !vehicle) {
+    throw new Error(`Vehicle lookup failed for VIN ${vin}: ${vehicleError?.message || 'Not found'}`);
+  }
+
   let currentIndex = 0;
 
-  // 2. Process sequentially to avoid overwhelming network/memory
+  // 3. Process sequentially to avoid overwhelming network/memory
   for (const record of pendingPhotos) {
     currentIndex++;
     
@@ -41,7 +54,7 @@ export async function processPayload(
       // Example: inventory/1N4AL3APXFC123456/retail/left_front_three_quarter.webp
       const storagePath = `${record.vin}/${record.mode}/${record.angle_id}.webp`;
 
-      // 3. Upload binary data to Supabase Storage
+      // 4. Upload binary data to Supabase Storage
       const { error: uploadError } = await supabase.storage
         .from('inventory')
         .upload(storagePath, record.blob, { 
@@ -54,28 +67,25 @@ export async function processPayload(
         throw new Error(`Storage upload failed: ${uploadError.message}`);
       }
 
-      // 4. Retrieve the public URL
+      // 5. Retrieve the public URL
       const { data: publicUrlData } = supabase.storage
         .from('inventory')
         .getPublicUrl(storagePath);
 
-      // 5. Create the database record linking the asset to the vehicle
-      // Assuming a generic vehicle_images or vehicle_assets table structure based on standard setups
+      // 6. Create the database record linking the asset to the vehicle
       const { error: dbError } = await supabase
         .from('vehicle_images')
         .insert({
-          vin: record.vin,
-          angle_id: record.angle_id,
-          mode: record.mode,
-          image_url: publicUrlData.publicUrl,
-          // If vehicle_id is strictly required, it would need to be fetched prior or included in the payload
+          vehicle_id: vehicle.id,
+          storage_url: publicUrlData.publicUrl,
+          is_primary: record.angle_id === 'left_front_three_quarter' || record.angle_id === 'front_straight_on',
         });
 
       if (dbError) {
         throw new Error(`Database insert failed: ${dbError.message}`);
       }
 
-      // 6. Success: Remove from local queue
+      // 7. Success: Remove from local queue
       if (record.id) {
         await removeFromOfflineQueue(record.id);
       }

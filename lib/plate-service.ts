@@ -6,8 +6,9 @@ export async function lookupPlate(plate: string, state: string) {
   // NOTE: Real-world plate lookups usually require a paid API like Carfax, VinAudit, or Infotracer.
   // For this LotEngine MVP/Prototype, we are implementing the UI flow and using a mock resolver 
   // that simulates the resolution to a VIN, which then triggers the standard NHTSA decode.
-  
-  console.log(`Initiating Plate Lookup: ${plate} [${state}]`);
+
+  // Do not log plates — they are PII in most jurisdictions.
+  console.log("Plate lookup initiated.");
 
   // Simulate API Latency
   await new Promise(resolve => setTimeout(resolve, 1500));

@@ -1,7 +1,9 @@
 import { headers } from "next/headers";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase-server";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import VehicleGallery from "../components/VehicleGallery";
+import { getLink as getLinkUtil } from "@/lib/getLink";
 
 export default async function VehicleDetail({ params }: { params: Promise<{ vin: string, domain: string }> }) {
   const { vin, domain: host } = await params;
@@ -9,10 +11,9 @@ export default async function VehicleDetail({ params }: { params: Promise<{ vin:
   const currentHost = headerList.get("host") || "";
   const isMarketingDomain = currentHost === 'localhost:3000' || currentHost === 'lot-engine.com' || currentHost === 'www.lot-engine.com';
 
-  const getLink = (path: string) => {
-    if (!isMarketingDomain) return path;
-    return `/${host}${path === '/' ? '' : path}`;
-  };
+  const getLink = (path: string) => getLinkUtil(path, host, isMarketingDomain);
+
+  const supabase = await createClient();
 
   // 1. Fetch Tenant
   let { data: tenant } = await supabase
@@ -22,7 +23,11 @@ export default async function VehicleDetail({ params }: { params: Promise<{ vin:
     .single();
 
   if (!tenant) {
-    const { data: fallback } = await supabase.from("tenants").select("*").limit(1).single();
+    let { data: fallback } = await supabase.from("tenants").select("*").eq("domain", "localhost:3000").single();
+    if (!fallback) {
+      const { data: firstTenant } = await supabase.from("tenants").select("*").limit(1).single();
+      fallback = firstTenant;
+    }
     tenant = fallback;
   }
 
@@ -31,7 +36,14 @@ export default async function VehicleDetail({ params }: { params: Promise<{ vin:
   // 2. Fetch Vehicle by VIN
   const { data: vehicle } = await supabase
     .from("vehicles")
-    .select("*")
+    .select(`
+      *,
+      vehicle_images (
+        storage_url,
+        is_primary,
+        sort_order
+      )
+    `)
     .eq("vin", vin)
     .eq("tenant_id", tenant.id)
     .single();
@@ -51,17 +63,11 @@ export default async function VehicleDetail({ params }: { params: Promise<{ vin:
 
       <main className="max-w-7xl mx-auto p-6 sm:p-12">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
-          {/* Gallery Placeholder */}
-          <div className="space-y-4">
-            <div className="aspect-square bg-zinc-100 border-4 border-black flex items-center justify-center">
-              <p className="text-xs font-black uppercase opacity-20 italic">Primary Asset Capture Pending</p>
-            </div>
-            <div className="grid grid-cols-4 gap-4">
-              {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="aspect-square bg-zinc-50 border-2 border-black/10"></div>
-              ))}
-            </div>
-          </div>
+          {/* Dynamic Image Gallery */}
+          <VehicleGallery 
+            images={vehicle.vehicle_images || []} 
+            vehicleName={`${vehicle.year} ${vehicle.make} ${vehicle.model}`} 
+          />
 
           {/* Details */}
           <div className="flex flex-col">

@@ -10,5 +10,5 @@ This file provides foundational mandates for the LotEngine project. For comprehe
 ## Key Files
 - `AGENTS.md`: The project constitution (Rules of Engagement).
 - `blueprint.md`: Detailed system architecture and data models.
-- `proxy.ts`: Multi-tenant routing and domain rewrite logic.
+- `middleware.ts`: Multi-tenant routing and domain rewrite logic.
 - `lib/supabase-server.ts`: Secure server-side database access.

@@ -1,5 +1,4 @@
-import CaptureModule from "@/app/(dashboard)/components/CaptureModule";
-import { supabase as publicSupabase } from "@/lib/supabase";
+import CaptureModule from "@/components/CaptureModule";
 import { createClient } from "@/lib/supabase-server";
 import { redirect } from "next/navigation";
 
@@ -22,8 +21,8 @@ export default async function CapturePage({
     redirect(loginPath);
   }
 
-  // 2. Fetch tenant for brand color (using publicSupabase or server supabase)
-  const { data: tenant } = await publicSupabase
+  // 2. Fetch tenant for brand color
+  const { data: tenant } = await supabase
     .from("tenants")
     .select("color_primary")
     .eq("domain", domain)

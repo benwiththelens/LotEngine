@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useRef, useMemo, useEffect } from 'react';
-import { Camera, Upload, CheckCircle2, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { Camera, Upload, CheckCircle2, ChevronDown, Loader2 } from 'lucide-react';
 import { generateProxy } from '@/utils/compressImage';
 import { saveToOfflineQueue, getOfflineQueue } from '@/utils/indexedDB';
 import { processPayload } from '@/utils/syncEngine';
@@ -78,14 +78,16 @@ export default function CaptureModule({ vin, mode, tenantBrandColor = '#0047AB' 
   // The Observer Effect for Auto-Advance
   useEffect(() => {
     const nextUncaptured = shots.find(shot => !capturedShots[shot.id]);
-    if (nextUncaptured) {
-      setExpandedId(nextUncaptured.id);
-      setTimeout(() => {
-        document.getElementById(nextUncaptured.id)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }, 150);
-    } else {
-      setExpandedId(null);
-    }
+    const targetId = nextUncaptured ? nextUncaptured.id : null;
+
+    const handle = setTimeout(() => {
+      setExpandedId(targetId);
+      if (targetId) {
+        document.getElementById(targetId)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 150);
+
+    return () => clearTimeout(handle);
   }, [capturedShots, shots]);
 
   const handleCapture = async (id: string, e: React.ChangeEvent<HTMLInputElement>) => {

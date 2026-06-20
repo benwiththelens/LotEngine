@@ -14,7 +14,7 @@ LotEngine is a digital twin of the physical asphalt. It is designed for maximum 
 ## 2. Multi-Tenant Architecture (Next.js 16)
 The platform uses a dynamic proxy for domain-based routing.
 
-- **DOMAIN REWRITES:** Requests are rewritten in `proxy.ts` from `hostname/path` to `/(tenant)/[domain]/path`.
+- **DOMAIN REWRITES:** Requests are rewritten in `middleware.ts` from `hostname/path` to `/(tenant)/[domain]/path`.
 - **LINK GENERATION:** Never use hardcoded strings for internal links. Use the `getLink(path)` helper present in most page components to ensure the user stays on the correct domain (Marketing vs. Tenant).
 - **ROUTE STRUCTURE:**
   - `(marketing)`: SaaS landing pages.

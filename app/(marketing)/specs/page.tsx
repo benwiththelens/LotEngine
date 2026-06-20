@@ -83,7 +83,7 @@ export default function SpecsPage() {
           className="inline-flex items-center gap-2 font-mono text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500 hover:text-[#0055FF] transition-colors mb-12"
         >
           <ArrowLeft size={14} />
-          // RETURN_TO_ROOT
+          {"// RETURN_TO_ROOT"}
         </Link>
 
         <header className="mb-20">
@@ -111,7 +111,7 @@ export default function SpecsPage() {
             </p>
 
             <div className="bg-black border border-zinc-800 p-6 md:p-8 font-mono text-[10px] space-y-6">
-              <div className="text-zinc-500 uppercase tracking-widest mb-4">// NETWORK_TOPOLOGY_MAP</div>
+              <div className="text-zinc-500 uppercase tracking-widest mb-4">{"// NETWORK_TOPOLOGY_MAP"}</div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="space-y-4">

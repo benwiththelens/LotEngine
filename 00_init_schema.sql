@@ -33,6 +33,10 @@ CREATE TABLE IF NOT EXISTS tenants (
     color_primary TEXT DEFAULT '#0047AB',
     color_background TEXT DEFAULT '#FFFFFF',
     logo_url TEXT,
+    address TEXT,
+    phone TEXT,
+    hours JSONB,
+    reviews JSONB,
     created_at TIMESTAMPTZ DEFAULT now()
 );
 
@@ -116,3 +120,38 @@ ALTER TABLE vehicles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE service_orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE vehicle_images ENABLE ROW LEVEL SECURITY;
 ALTER TABLE leads ENABLE ROW LEVEL SECURITY;
+
+-- 6. Row Level Security Policies
+
+-- tenants
+CREATE POLICY "Allow public read access to tenants" ON tenants 
+    FOR SELECT USING (true);
+
+CREATE POLICY "Allow authenticated insert/update/delete to tenants" ON tenants 
+    FOR ALL TO authenticated USING (true) WITH CHECK (true);
+
+-- vehicles
+CREATE POLICY "Allow public read access to available vehicles" ON vehicles 
+    FOR SELECT USING (status = 'available' OR auth.role() = 'authenticated');
+
+CREATE POLICY "Allow authenticated users full access to vehicles" ON vehicles 
+    FOR ALL TO authenticated USING (true) WITH CHECK (true);
+
+-- service_orders
+CREATE POLICY "Allow authenticated users full access to service_orders" ON service_orders 
+    FOR ALL TO authenticated USING (true) WITH CHECK (true);
+
+-- vehicle_images
+CREATE POLICY "Allow public read access to vehicle_images" ON vehicle_images 
+    FOR SELECT USING (true);
+
+CREATE POLICY "Allow authenticated users full access to vehicle_images" ON vehicle_images 
+    FOR ALL TO authenticated USING (true) WITH CHECK (true);
+
+-- leads
+CREATE POLICY "Allow authenticated users full access to leads" ON leads 
+    FOR ALL TO authenticated USING (true) WITH CHECK (true);
+
+CREATE POLICY "Allow public insert to leads" ON leads 
+    FOR INSERT WITH CHECK (true);
+

@@ -2,6 +2,29 @@
 
 All notable changes to the LotEngine project will be documented in this file.
 
+## [0.5.0] - 2026-06-20
+
+### Added
+- **Shared `getLink` Utility (`lib/getLink.ts`):** Extracted the domain-aware link builder into a single canonical function (`getLink(path, domain, isMarketingDomain): string`). Eliminates copy-paste drift across 8 call sites.
+- **Row-Level Security (RLS):** Introduced `user_tenant_roles` junction table with tenant-scoped INSERT/SELECT/UPDATE/DELETE policies on `vehicles`, `service_orders`, `vehicle_images`, and `leads`. All queries are now fully tenant-isolated.
+- **Next.js Standard Middleware (`middleware.ts`):** Replaced the non-standard `proxy.ts` export with a properly named `middleware.ts` entry point using `export function middleware()` as required by Next.js spec.
+
+### Fixed
+- **Offline Sync Queue Data Loss (`lib/sync-engine.ts`):** Failed queue items were previously discarded silently. They are now retained in localStorage and retried on the next sync cycle.
+- **Admin Route Auth Guard (`app/(tenant)/[domain]/admin/layout.tsx`):** Admin layout now performs server-side session validation via `@supabase/ssr` before rendering. Previously, protection was client-side only.
+- **Open Redirect on Login (`app/(tenant)/[domain]/login/page.tsx`):** The `?next=` redirect parameter is now validated against a strict allowlist (`/admin`, `/inventory`, `/`). External URLs are rejected.
+- **VIN Decode Null Guard (`lib/vin-service.ts`):** Fixed `"undefinedL undefinedcyl"` engine string when displacement or cylinder fields return empty from the NHTSA API.
+- **N+1 Vehicle Lookup (`utils/syncEngine.ts`):** Moved the vehicle lookup query outside of the photo upload loop — was previously firing once per photo per vehicle.
+- **PII Log Removed (`lib/plate-service.ts`):** Eliminated a `console.log` that was printing raw plate numbers to server logs.
+
+### Changed
+- **Supabase Browser Client Consolidated:** Removed the duplicate `lib/supabase.ts` singleton. All client-side files now import `createClient` from `lib/supabase-browser.ts` and instantiate at the module level.
+- **`proxy.ts` Deleted:** The old non-standard middleware file has been removed. `middleware.ts` is the canonical entry point.
+- **`recover_file.js` Deleted:** 345-line dead-code recovery script removed from the project root.
+- **`AGENTS.md` & `GEMINI.md` Updated:** All internal documentation references to `proxy.ts` corrected to `middleware.ts`.
+
+---
+
 ## [0.4.0] - 2026-06-14
 
 ### Added
@@ -32,14 +55,13 @@ All notable changes to the LotEngine project will be documented in this file.
 - **Hybrid Login Gate:** Implemented a failsafe authentication UI supporting both high-speed Access Keys (Passwords) and asphalt-ready Secure Links (Magic Link OTP).
 - **Terminal Demo Request:** Replaced standard contact forms with a high-fidelity input terminal integrated with the Resend email protocol.
 - **System Specifications Page:** Created a technical deep-dive route (`/specs`) mirroring system architecture and tech stack details.
-- **Dynamic Proxy Infrastructure:** Implemented `proxy.ts` (Next.js 16) to handle intelligent domain rewrites, supporting both shared subpaths and custom dealer domains.
+- **Dynamic Middleware Infrastructure:** Implemented `middleware.ts` (Next.js 16) to handle intelligent domain rewrites, supporting both shared subpaths and custom dealer domains.
 - **Official Brand Assets:** Fully integrated the new official LotEngine logo (Blue/White/Transparent) across the navigation, sidebars, and footers.
 - **Finalized Favicon Pack (v3):** Integrated optimized, space-efficient brand icons for all platforms.
 
 ### Fixed
 - **Domain-Aware Navigation:** Implemented a robust `getLink` helper using hostname detection to fix the "Exit" button and internal navigation across shared domains.
 - **TypeScript & Build:** Resolved strict type check issues related to dynamic route parameters and null-safe numeric fields.
-- **Middleware Migration:** Successfully migrated from deprecated `middleware.ts` to the new `proxy.ts` Next.js convention.
 
 ### Changed
 - **Folder Restructuring:** Moved all dealership retail and admin logic into dynamic `[domain]` routes for true multi-tenant isolation.

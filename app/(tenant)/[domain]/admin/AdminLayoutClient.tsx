@@ -2,7 +2,10 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase-browser";
+import { getLink as getLinkUtil } from "@/lib/getLink";
+
+const supabase = createClient();
 
 const NAV_ITEMS = [
   { 
@@ -19,6 +22,13 @@ const NAV_ITEMS = [
       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.7a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.7z"/></svg>
     ) 
   },
+  { 
+    href: "/admin/settings", 
+    label: "Settings", 
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    ) 
+  },
 ];
 
 export default function AdminLayoutClient({
@@ -33,11 +43,7 @@ export default function AdminLayoutClient({
   const pathname = usePathname();
   const router = useRouter();
 
-  const getLink = (href: string) => {
-    if (!isMarketingDomain) return href;
-    // Always prefix with domain on marketing domain to ensure we hit tenant routes
-    return `/${domain}${href === '/' ? '' : href}`;
-  };
+  const getLink = (href: string) => getLinkUtil(href, domain, isMarketingDomain);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -81,8 +87,9 @@ export default function AdminLayoutClient({
         <div className="flex flex-col gap-6 items-center">
           <Link 
             href={getLink("/")} 
-            title="Public Site"
-            className="text-white/30 hover:text-white transition-colors text-white"
+            title="Public Showroom"
+            target="_blank"
+            className="w-12 h-12 flex items-center justify-center text-brand-primary border-2 border-brand-primary bg-brand-primary/10 hover:bg-brand-primary hover:text-white transition-all shadow-[2px_2px_0px_0px_rgba(255,255,255,0.15)] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px]"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="4"/></svg>
           </Link>
@@ -96,7 +103,7 @@ export default function AdminLayoutClient({
           </button>
         </div>
       </aside>
-
+ 
       {/* Mobile Bottom Bar */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-black border-t-2 border-brand-primary/20 flex justify-around items-center z-[100] px-4 text-white">
         {NAV_ITEMS.map((item) => {
@@ -117,6 +124,16 @@ export default function AdminLayoutClient({
           );
         })}
         
+        {/* Mobile Public Showroom Button */}
+        <Link 
+          href={getLink("/")}
+          target="_blank"
+          title="Public Showroom"
+          className="p-2.5 text-brand-primary border-2 border-brand-primary bg-brand-primary/10 hover:bg-brand-primary hover:text-white transition-all shadow-[2px_2px_0px_0px_rgba(255,255,255,0.15)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="4"/></svg>
+        </Link>
+
         {/* Mobile Sign Out */}
         <button 
           onClick={handleSignOut}

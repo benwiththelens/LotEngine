@@ -3,7 +3,7 @@ import type { NextRequest } from 'next/server';
 
 /**
  * ⚠️ LOTENGINE CORE INFRASTRUCTURE ⚠️
- * MULTI-TENANT DYNAMIC PROXY
+ * MULTI-TENANT DYNAMIC MIDDLEWARE
  * 
  * This middleware acts as the network edge for the entire platform. 
  * It determines whether a user is looking at the global SaaS marketing site 
@@ -21,7 +21,7 @@ import type { NextRequest } from 'next/server';
  * Request: lot-engine.com/login -> Rewrites to: /[lot-engine.com]/login -> Serves: app/(tenant)/[domain]/login/page.tsx
  * Request: dealer-a.com/inventory -> Rewrites to: /[dealer-a.com]/inventory -> Serves: app/(tenant)/[domain]/inventory/page.tsx
  */
-export function proxy(req: NextRequest) {
+export function middleware(req: NextRequest) {
   const url = req.nextUrl;
   const hostname = req.headers.get('host') || 'lot-engine.com';
 
